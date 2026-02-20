@@ -1,0 +1,201 @@
+use std::fmt;
+use std::ops::{Add, Mul};
+
+/// A matrix stored in row-major order
+/// Data is a (flat) Vec<f64> of size rows * cols
+#[derive(Clone, Debug)]
+pub struct Matrix {
+    rows: usize,
+    cols: usize,
+    data: Vec<f64>,
+}
+
+impl Matrix {
+    pub fn new(rows: usize, cols: usize, data: Vec<f64>) -> Self {
+        todo!()
+    }
+
+    pub fn rows(&self) -> usize {
+        todo!()
+    }
+
+    pub fn cols(&self) -> usize {
+        todo!()
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> f64 {
+        todo!()
+    }
+
+    pub fn set(&mut self, row: usize, col: usize, value: f64) {
+        todo!()
+    }
+
+    pub fn zeros(rows: usize, cols: usize) -> Self {
+        todo!()
+    }
+
+    pub fn transpose(&self) -> Matrix {
+        todo!()
+    }
+
+    pub fn dot(&self, other: &Matrix) -> Matrix {
+        todo!()
+    }
+}
+
+// TODO:
+// Implement Add for &Matrix + &Matrix
+// impl Add for &Matrix {}
+
+// TODO:
+// Implement Mul for &Matrix * f64
+// impl Mul<f64> for &Matrix {}
+
+// Display for pretty printing
+impl fmt::Display for Matrix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Matrix {}x{} [\n", self.rows, self.cols)?;
+        for i in 0..self.rows {
+            write!(f, "  [")?;
+            for j in 0..self.cols {
+                if j > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:.4}", self.get(i, j))?;
+            }
+            writeln!(f, "]")?;
+        }
+        write!(f, "]")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_valid() {
+        let m = Matrix::new(2, 3, vec![1.0; 6]);
+        assert_eq!(m.rows(), 2);
+        assert_eq!(m.cols(), 3);
+    }
+
+    #[test]
+    #[should_panic(expected = "Matrix dimensions")]
+    fn test_new_wrong_size() {
+        let _ = Matrix::new(2, 3, vec![1.0; 5]); // Should be 6
+    }
+
+    #[test]
+    fn test_get_set() {
+        let mut m = Matrix::new(2, 2, vec![0.0; 4]);
+        m.set(1, 1, 42.0);
+        assert_eq!(m.get(1, 1), 42.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_get_out_of_bounds() {
+        let m = Matrix::new(2, 2, vec![0.0; 4]);
+        let _ = m.get(2, 0);
+    }
+
+    #[test]
+    fn test_addition() {
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        let c = &a + &b;
+
+        assert_eq!(c.get(0, 0), 6.0);
+        assert_eq!(c.get(0, 1), 8.0);
+        assert_eq!(c.get(1, 0), 10.0);
+        assert_eq!(c.get(1, 1), 12.0);
+    }
+
+    #[test]
+    fn test_scalar_multiply() {
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let c = &a * 2.5;
+
+        assert_eq!(c.get(0, 0), 2.5);
+        assert_eq!(c.get(1, 1), 10.0);
+    }
+
+    #[test]
+    fn test_multiply_2x2() {
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        let c = a.dot(&b);
+
+        assert_eq!(c.get(0, 0), 19.0);
+        assert_eq!(c.get(0, 1), 22.0);
+        assert_eq!(c.get(1, 0), 43.0);
+        assert_eq!(c.get(1, 1), 50.0);
+    }
+
+    #[test]
+    fn test_multiply_non_square() {
+        let a = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let b = Matrix::new(3, 2, vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0]);
+        let c = a.dot(&b);
+
+        assert_eq!(c.get(0, 0), 58.0);
+        assert_eq!(c.get(0, 1), 64.0);
+        assert_eq!(c.get(1, 0), 139.0);
+        assert_eq!(c.get(1, 1), 154.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_multiply_dimension_mismatch() {
+        let a = Matrix::new(2, 2, vec![1.0; 4]);
+        let b = Matrix::new(3, 2, vec![1.0; 6]);
+        let _ = a.dot(&b);
+    }
+
+    #[test]
+    fn test_transpose() {
+        let a = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let t = a.transpose();
+
+        assert_eq!(t.rows(), 3);
+        assert_eq!(t.cols(), 2);
+        assert_eq!(t.get(0, 0), 1.0);
+        assert_eq!(t.get(0, 1), 4.0);
+        assert_eq!(t.get(1, 0), 2.0);
+        assert_eq!(t.get(1, 1), 5.0);
+        assert_eq!(t.get(2, 0), 3.0);
+        assert_eq!(t.get(2, 1), 6.0);
+    }
+
+    #[test]
+    fn test_transpose_twice() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let t = m.transpose().transpose();
+
+        for i in 0..m.rows() {
+            for j in 0..m.cols() {
+                assert!((m.get(i, j) - t.get(i, j)).abs() < 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_zeros() {
+        let m = Matrix::zeros(3, 4);
+        assert_eq!(m.rows(), 3);
+        assert_eq!(m.cols(), 4);
+        for i in 0..3 {
+            for j in 0..4 {
+                assert_eq!(m.get(i, j), 0.0);
+            }
+        }
+    }
+
+    #[test]
+    fn test_display() {
+        let m = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let _ = format!("{}", m); // Should not panic
+    }
+}
