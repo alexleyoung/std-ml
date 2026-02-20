@@ -1,0 +1,8 @@
+[package]
+name = "std-ml"
+version = "0.1.0"
+edition = "2024"
+
+# Std lib only - no external crates!
+# All linear algebra operations must be implemented from scratch
+[dependencies]
