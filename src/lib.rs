@@ -1,40 +1,24 @@
 //! A from-scratch MLP library for MNIST digit classification
 //!
 //! This library implements a multilayer perceptron using only Rust's standard
-//! library. No external crates are used, making this both an educational tool
-//! for understanding ML fundamentals and a learning exercise in Rust.
-//!
-//! # Design Principles
-//!
-//! - Std lib only: All operations built from scratch
-//! - Educational focus: Clarity over optimization
-//! - Complete implementation: From matrix operations to training
+//! library.
 //!
 //! # Structure
 //!
 //! - `matrix`: Linear algebra operations
-//! - `layer`: Neural network layers (future)
-//! - `network`: Network composition (future)
-//! - `loss`: Loss functions (future)
-//! - `data`: Data loading (future)
-//!
-//! # Testing
-//!
-//! All components include comprehensive unit tests. Run `cargo test` to verify.
-//! See `docs/architecture.md` for testing strategies and patterns.
+//! - `layer`: Neural network layers
+//! - `network`: Network composition
+//! - `loss`: Loss functions
+//! - `data`: Data loading
 
 // Module declarations
 pub mod matrix;
 
-// Re-export for convenience
 pub use matrix::Matrix;
 
 // ============================================================================
 // TEST UTILITIES AND HELPERS
 // ============================================================================
-//
-// These utilities help with testing. They're in the library crate
-// so they can be used by unit tests, integration tests, and examples.
 
 #[cfg(test)]
 pub mod test_utils {
@@ -91,9 +75,6 @@ pub mod test_utils {
     }
 
     /// Creates a deterministic pseudo-random number generator
-    ///
-    /// Since std lib has no random numbers, this uses a simple LCG.
-    /// Useful for reproducible tests.
     ///
     /// # Example
     /// ```
