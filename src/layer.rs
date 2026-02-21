@@ -1,28 +1,45 @@
-use crate::matrix::Matrix;
+use crate::{
+    matrix::Matrix,
+    utils::{Rng, add_vecs},
+};
 
 pub struct Linear {
     in_features: usize,
     out_features: usize,
-    weight: Matrix, // shape: (out_features, in_features)
-    bias: Vec<f64>, // shape: (out_features,)
-    // For backprop: store input
-    input: Option<Vec<f64>>,
+    weight: Matrix,      // shape: (out_features, in_features)
+    bias: Vec<f64>,      // shape: (out_features,)
+    grad_weight: Matrix, // shape: (out_features, in_features)
+    grad_bias: Vec<f64>, // shape: (out_features,)
 }
 
 impl Linear {
     pub fn new(in_features: usize, out_features: usize) -> Self {
-        todo!()
+        let mut data = vec![0.0; in_features * out_features];
+        Rng::new().fill(&mut data, -0.1, 0.1);
+
+        Self {
+            in_features,
+            out_features,
+            weight: Matrix::new(out_features, in_features, data),
+            bias: vec![0.0; out_features],
+            grad_weight: Matrix::zeros(out_features, in_features),
+            grad_bias: vec![0.0; out_features],
+        }
     }
 
+    /// calc y = Wx + b
     pub fn forward(&mut self, input: &[f64]) -> Vec<f64> {
-        todo!()
+        assert!(self.in_features == input.len());
+
+        let wx = &self.weight * input;
+        add_vecs(&wx, &self.bias)
     }
 
     pub fn forward_batch(&mut self, inputs: &[Vec<f64>]) -> Vec<Vec<f64>> {
-        todo!()
+        inputs.iter().map(|x| self.forward(x)).collect()
     }
 
-    pub fn backward(&mut self, grad_output: &[f64]) -> Vec<f64> {
+    pub fn backward(&mut self, grad_output: &[f64], input: &[f64]) -> Vec<f64> {
         todo!()
     }
 
@@ -63,10 +80,6 @@ mod tests {
         assert!((output[0] - 5.1).abs() < 1e-10);
         assert!((output[1] - 11.2).abs() < 1e-10);
         assert!((output[2] - 17.3).abs() < 1e-10);
-
-        // Verify input was stored for backprop
-        assert!(layer.input.is_some());
-        assert_eq!(layer.input.as_ref().unwrap().len(), 2);
     }
 
     #[test]
