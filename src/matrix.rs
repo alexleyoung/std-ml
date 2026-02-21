@@ -12,45 +12,88 @@ pub struct Matrix {
 
 impl Matrix {
     pub fn new(rows: usize, cols: usize, data: Vec<f64>) -> Self {
-        todo!()
+        assert!(rows * cols == data.len());
+        Self { rows, cols, data }
     }
 
     pub fn rows(&self) -> usize {
-        todo!()
+        self.rows
     }
 
     pub fn cols(&self) -> usize {
-        todo!()
+        self.cols
     }
 
     pub fn get(&self, row: usize, col: usize) -> f64 {
-        todo!()
+        assert!(row < self.rows);
+        assert!(col < self.cols);
+        self.data[row * self.cols + col]
     }
 
     pub fn set(&mut self, row: usize, col: usize, value: f64) {
-        todo!()
+        assert!(row < self.rows);
+        assert!(col < self.cols);
+        self.data[row * self.cols + col] = value;
     }
 
     pub fn zeros(rows: usize, cols: usize) -> Self {
-        todo!()
+        Self {
+            rows,
+            cols,
+            data: vec![0.0; rows * cols],
+        }
     }
 
     pub fn transpose(&self) -> Matrix {
-        todo!()
+        let mut res = Self::zeros(self.rows, self.cols);
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                res.set(j, i, self.get(i, j));
+            }
+        }
+        res
     }
 
     pub fn dot(&self, other: &Matrix) -> Matrix {
-        todo!()
+        assert_eq!(self.cols, other.rows);
+        let mut res = Self::zeros(self.rows, other.cols);
+        for i in 0..self.rows {
+            for j in 0..other.cols {
+                let mut sum = 0.0;
+                for k in 0..self.cols {
+                    sum += self.get(i, k) * other.get(k, j)
+                }
+                res.set(i, j, sum);
+            }
+        }
+        res
     }
 }
 
-// TODO:
 // Implement Add for &Matrix + &Matrix
-// impl Add for &Matrix {}
+impl Add for &Matrix {
+    type Output = Matrix;
+    fn add(self, rhs: &Matrix) -> Matrix {
+        assert_eq!(self.rows(), rhs.rows());
+        assert_eq!(self.cols(), rhs.cols());
+        let data = self
+            .data
+            .iter()
+            .zip(rhs.data.iter())
+            .map(|(x, y)| x + y)
+            .collect();
+        Matrix::new(self.rows, self.cols, data)
+    }
+}
 
-// TODO:
 // Implement Mul for &Matrix * f64
-// impl Mul<f64> for &Matrix {}
+impl Mul<f64> for &Matrix {
+    type Output = Matrix;
+    fn mul(self, rhs: f64) -> Matrix {
+        let data = self.data.iter().map(|x| x * rhs).collect();
+        Matrix::new(self.rows, self.cols, data)
+    }
+}
 
 // Display for pretty printing
 impl fmt::Display for Matrix {
