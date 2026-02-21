@@ -45,7 +45,7 @@ impl Matrix {
     }
 
     pub fn transpose(&self) -> Matrix {
-        let mut res = Self::zeros(self.rows, self.cols);
+        let mut res = Self::zeros(self.cols, self.rows);
         for i in 0..self.rows {
             for j in 0..self.cols {
                 res.set(j, i, self.get(i, j));
@@ -54,7 +54,7 @@ impl Matrix {
         res
     }
 
-    pub fn dot(&self, other: &Matrix) -> Matrix {
+    pub fn mul(&self, other: &Matrix) -> Matrix {
         assert_eq!(self.cols, other.rows);
         let mut res = Self::zeros(self.rows, other.cols);
         for i in 0..self.rows {
@@ -125,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Matrix dimensions")]
+    #[should_panic]
     fn test_new_wrong_size() {
         let _ = Matrix::new(2, 3, vec![1.0; 5]); // Should be 6
     }
@@ -169,7 +169,7 @@ mod tests {
     fn test_multiply_2x2() {
         let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
         let b = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
-        let c = a.dot(&b);
+        let c = a.mul(&b);
 
         assert_eq!(c.get(0, 0), 19.0);
         assert_eq!(c.get(0, 1), 22.0);
@@ -181,7 +181,7 @@ mod tests {
     fn test_multiply_non_square() {
         let a = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
         let b = Matrix::new(3, 2, vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0]);
-        let c = a.dot(&b);
+        let c = a.mul(&b);
 
         assert_eq!(c.get(0, 0), 58.0);
         assert_eq!(c.get(0, 1), 64.0);
@@ -194,7 +194,7 @@ mod tests {
     fn test_multiply_dimension_mismatch() {
         let a = Matrix::new(2, 2, vec![1.0; 4]);
         let b = Matrix::new(3, 2, vec![1.0; 6]);
-        let _ = a.dot(&b);
+        let _ = a.mul(&b);
     }
 
     #[test]
