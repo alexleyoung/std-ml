@@ -16,6 +16,14 @@ impl Matrix {
         Self { rows, cols, data }
     }
 
+    pub fn zeros(rows: usize, cols: usize) -> Self {
+        Self {
+            rows,
+            cols,
+            data: vec![0.0; rows * cols],
+        }
+    }
+
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -36,22 +44,17 @@ impl Matrix {
         self.data[row * self.cols + col] = value;
     }
 
-    pub fn zeros(rows: usize, cols: usize) -> Self {
-        Self {
-            rows,
-            cols,
-            data: vec![0.0; rows * cols],
-        }
-    }
-
-    pub fn transpose(&self) -> Matrix {
-        let mut res = Self::zeros(self.cols, self.rows);
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                res.set(j, i, self.get(i, j));
-            }
-        }
-        res
+    /// Math Operators
+    pub fn add(&self, other: &Matrix) -> Matrix {
+        assert_eq!(self.rows(), other.rows());
+        assert_eq!(self.cols(), other.cols());
+        let data = self
+            .data
+            .iter()
+            .zip(other.data.iter())
+            .map(|(x, y)| x + y)
+            .collect();
+        Matrix::new(self.rows, self.cols, data)
     }
 
     pub fn mul(&self, other: &Matrix) -> Matrix {
@@ -68,21 +71,23 @@ impl Matrix {
         }
         res
     }
+
+    pub fn transpose(&self) -> Matrix {
+        let mut res = Self::zeros(self.cols, self.rows);
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                res.set(j, i, self.get(i, j));
+            }
+        }
+        res
+    }
 }
 
 // Implement Add for &Matrix + &Matrix
 impl Add for &Matrix {
     type Output = Matrix;
     fn add(self, rhs: &Matrix) -> Matrix {
-        assert_eq!(self.rows(), rhs.rows());
-        assert_eq!(self.cols(), rhs.cols());
-        let data = self
-            .data
-            .iter()
-            .zip(rhs.data.iter())
-            .map(|(x, y)| x + y)
-            .collect();
-        Matrix::new(self.rows, self.cols, data)
+        self.add(rhs)
     }
 }
 
@@ -92,6 +97,13 @@ impl Mul<f64> for &Matrix {
     fn mul(self, rhs: f64) -> Matrix {
         let data = self.data.iter().map(|x| x * rhs).collect();
         Matrix::new(self.rows, self.cols, data)
+    }
+}
+
+impl Mul<&Matrix> for &Matrix {
+    type Output = Matrix;
+    fn mul(self, rhs: &Matrix) -> Matrix {
+        self.mul(rhs)
     }
 }
 
