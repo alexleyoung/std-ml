@@ -1,9 +1,20 @@
-/// Creates a deterministic pseudo-random number generator
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
+
+/// Creates a pseudo-random number generator
 ///
 /// # Example
 /// ```
 /// use std_ml::utils::Rng;
-/// let mut rng = Rng::new(42);
+/// let mut rng = Rng::new(); // auto-seeded
+/// let val = rng.next();
+/// assert!(val >= 0.0 && val < 1.0);
+/// ```
+///
+/// # Example
+/// ```
+/// use std_ml::utils::Rng;
+/// let mut rng = Rng::with_seed(42);
 /// let val = rng.next();  // Deterministic sequence
 /// assert!(val >= 0.0 && val < 1.0);
 /// ```
@@ -12,8 +23,16 @@ pub struct Rng {
 }
 
 impl Rng {
+    pub fn new() -> Self {
+        let state = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos() as u64;
+        Self { state }
+    }
+
     /// Create new RNG with seed
-    pub fn new(seed: u64) -> Self {
+    pub fn with_seed(seed: u64) -> Self {
         Self { state: seed }
     }
 
@@ -28,6 +47,11 @@ impl Rng {
         (self.state as f64) / (u64::MAX as f64)
     }
 
+    pub fn next_range(&mut self, min: f64, max: f64) -> f64 {
+        let range = max - min;
+        self.next() * range + min
+    }
+
     /// Generate integer in [min, max)
     pub fn next_int(&mut self, min: i64, max: i64) -> i64 {
         let range = max - min;
@@ -36,9 +60,8 @@ impl Rng {
 
     /// Fill vector with random values in [min, max)
     pub fn fill(&mut self, vec: &mut [f64], min: f64, max: f64) {
-        let range = max - min;
         for v in vec.iter_mut() {
-            *v = self.next() * range + min;
+            *v = self.next_range(min, max)
         }
     }
 }
