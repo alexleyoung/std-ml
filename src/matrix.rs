@@ -72,6 +72,13 @@ impl Matrix {
         res
     }
 
+    pub fn mul_vec(&self, vec: &[f64]) -> Vec<f64> {
+        assert!(self.cols == vec.len());
+        (0..self.rows)
+            .map(|i| (0..self.cols).map(|j| self.get(i, j) * vec[j]).sum())
+            .collect()
+    }
+
     pub fn transpose(&self) -> Matrix {
         let mut res = Self::zeros(self.cols, self.rows);
         for i in 0..self.rows {
@@ -83,7 +90,7 @@ impl Matrix {
     }
 }
 
-// Implement Add for &Matrix + &Matrix
+// &Matrix + &Matrix
 impl Add for &Matrix {
     type Output = Matrix;
     fn add(self, rhs: &Matrix) -> Matrix {
@@ -91,7 +98,7 @@ impl Add for &Matrix {
     }
 }
 
-// Implement Mul for &Matrix * f64
+// &Matrix * f64
 impl Mul<f64> for &Matrix {
     type Output = Matrix;
     fn mul(self, rhs: f64) -> Matrix {
@@ -100,6 +107,15 @@ impl Mul<f64> for &Matrix {
     }
 }
 
+// &Matrix * &[f64]
+impl Mul<&[f64]> for &Matrix {
+    type Output = Vec<f64>;
+    fn mul(self, rhs: &[f64]) -> Vec<f64> {
+        self.mul_vec(rhs)
+    }
+}
+
+// &Matrix * &Matrix
 impl Mul<&Matrix> for &Matrix {
     type Output = Matrix;
     fn mul(self, rhs: &Matrix) -> Matrix {

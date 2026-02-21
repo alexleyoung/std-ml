@@ -65,3 +65,7 @@ impl Rng {
         }
     }
 }
+
+pub fn add_vecs(a: &[f64], b: &[f64]) -> Vec<f64> {
+    a.iter().zip(b.iter()).map(|(x, y)| x + y).collect()
+}
