@@ -64,7 +64,9 @@ impl Matrix {
             for j in 0..other.cols {
                 let mut sum = 0.0;
                 for k in 0..self.cols {
-                    sum += self.get(i, k) * other.get(k, j)
+                    // directly index to avoid unnecessary assertions from
+                    // get() and set(). compiler will guaranteed skip bounds check
+                    sum += self.data[i * self.cols + k] * other.data[k * other.cols + j];
                 }
                 res.set(i, j, sum);
             }
@@ -75,7 +77,11 @@ impl Matrix {
     pub fn mul_vec(&self, vec: &[f64]) -> Vec<f64> {
         assert!(self.cols == vec.len());
         (0..self.rows)
-            .map(|i| (0..self.cols).map(|j| self.get(i, j) * vec[j]).sum())
+            .map(|i| {
+                (0..self.cols)
+                    .map(|j| self.data[i * self.cols + j] * vec[j])
+                    .sum()
+            })
             .collect()
     }
 
@@ -83,7 +89,7 @@ impl Matrix {
         let mut res = Self::zeros(self.cols, self.rows);
         for i in 0..self.rows {
             for j in 0..self.cols {
-                res.set(j, i, self.get(i, j));
+                res.data[j * res.cols + i] = self.data[i * self.cols + j];
             }
         }
         res
