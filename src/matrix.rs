@@ -44,6 +44,16 @@ impl Matrix {
         self.data[row * self.cols + col] = value;
     }
 
+    pub fn transpose(&self) -> Matrix {
+        let mut res = Self::zeros(self.cols, self.rows);
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                res.data[j * res.cols + i] = self.data[i * self.cols + j];
+            }
+        }
+        res
+    }
+
     /// Math Operators
     pub fn add(&self, other: &Matrix) -> Matrix {
         assert_eq!(self.rows, other.rows);
@@ -77,6 +87,7 @@ impl Matrix {
         Matrix::new(self.rows, self.cols, data)
     }
 
+    // In-place subtraction of a Matrix [other] scaled by scalar [scale]
     pub fn sub_scale_inplace(&mut self, other: &Matrix, scale: f64) {
         assert_eq!(self.rows, other.rows);
         assert_eq!(self.cols, other.cols);
@@ -111,16 +122,6 @@ impl Matrix {
                     .sum()
             })
             .collect()
-    }
-
-    pub fn transpose(&self) -> Matrix {
-        let mut res = Self::zeros(self.cols, self.rows);
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                res.data[j * res.cols + i] = self.data[i * self.cols + j];
-            }
-        }
-        res
     }
 }
 

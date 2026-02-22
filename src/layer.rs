@@ -1,6 +1,6 @@
 use crate::{
     matrix::Matrix,
-    utils::{add_vecs, outer_prod, Rng},
+    utils::{Rng, add_vecs, outer_prod},
 };
 
 pub struct Linear {
@@ -13,6 +13,7 @@ pub struct Linear {
 }
 
 impl Linear {
+    /// Simple layer construction with weight and bias initialization
     pub fn new(in_features: usize, out_features: usize) -> Self {
         let mut data = vec![0.0; in_features * out_features];
         Rng::new().fill(&mut data, -0.1, 0.1);
@@ -27,7 +28,7 @@ impl Linear {
         }
     }
 
-    /// calc y = Wx + b
+    /// Calculate y = Wx + b to pass forward to following layer
     pub fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         assert!(self.in_features == input.len());
 
@@ -39,6 +40,14 @@ impl Linear {
         inputs.iter().map(|x| self.forward(x)).collect()
     }
 
+    /// Back propagation
+    ///
+    /// Parameters:
+    /// [grad_output]: gradient vector w.r.t. this layer's output (size out_features)
+    /// [input]: vec of inputs used to compute this layer's forward pass (size in_features)
+    ///
+    /// Return:
+    /// Weight transpose * [grad_output] for previous layers to use in gradient calculations
     pub fn backward(&mut self, grad_output: &[f64], input: &[f64]) -> Vec<f64> {
         self.grad_weight += outer_prod(grad_output, input);
         for (b, g) in self.grad_bias.iter_mut().zip(grad_output.iter()) {
@@ -47,6 +56,10 @@ impl Linear {
         &self.weight.transpose() * grad_output
     }
 
+    /// Update weights and biases
+    ///
+    /// Parameters:
+    /// [learning_rate]: the learning rate of this layer
     pub fn update(&mut self, learning_rate: f64) {
         self.weight
             .sub_scale_inplace(&self.grad_weight, learning_rate);
@@ -55,6 +68,7 @@ impl Linear {
         }
     }
 
+    /// Reset gradients for use in between forward batches
     pub fn zero_grad(&mut self) {
         self.grad_weight = Matrix::zeros(self.out_features, self.in_features);
         self.grad_bias = vec![0.0; self.out_features];
