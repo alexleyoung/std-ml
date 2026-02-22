@@ -1,6 +1,8 @@
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
+use crate::Matrix;
+
 /// Creates a pseudo-random number generator
 ///
 /// # Example
@@ -68,4 +70,14 @@ impl Rng {
 
 pub fn add_vecs(a: &[f64], b: &[f64]) -> Vec<f64> {
     a.iter().zip(b.iter()).map(|(x, y)| x + y).collect()
+}
+
+pub fn outer_prod(a: &[f64], b: &[f64]) -> Matrix {
+    let mut data = Vec::with_capacity(a.len() * b.len());
+    for x in a {
+        for y in b {
+            data.push(x * y);
+        }
+    }
+    Matrix::new(a.len(), b.len(), data)
 }

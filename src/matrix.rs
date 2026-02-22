@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, Mul};
+use std::ops::{Add, AddAssign, Mul, Sub};
 
 /// A matrix stored in row-major order
 /// Data is a (flat) Vec<f64> of size rows * cols
@@ -46,8 +46,8 @@ impl Matrix {
 
     /// Math Operators
     pub fn add(&self, other: &Matrix) -> Matrix {
-        assert_eq!(self.rows(), other.rows());
-        assert_eq!(self.cols(), other.cols());
+        assert_eq!(self.rows, other.rows);
+        assert_eq!(self.cols, other.cols);
         let data = self
             .data
             .iter()
@@ -55,6 +55,34 @@ impl Matrix {
             .map(|(x, y)| x + y)
             .collect();
         Matrix::new(self.rows, self.cols, data)
+    }
+
+    pub fn add_inplace(&mut self, other: &Matrix) {
+        assert_eq!(self.rows, other.rows);
+        assert_eq!(self.cols, other.cols);
+        for (a, b) in self.data.iter_mut().zip(&other.data) {
+            *a += b;
+        }
+    }
+
+    pub fn sub(&self, other: &Matrix) -> Matrix {
+        assert_eq!(self.rows, other.rows);
+        assert_eq!(self.cols, other.cols);
+        let data = self
+            .data
+            .iter()
+            .zip(other.data.iter())
+            .map(|(x, y)| x - y)
+            .collect();
+        Matrix::new(self.rows, self.cols, data)
+    }
+
+    pub fn sub_scale_inplace(&mut self, other: &Matrix, scale: f64) {
+        assert_eq!(self.rows, other.rows);
+        assert_eq!(self.cols, other.cols);
+        for (a, b) in self.data.iter_mut().zip(&other.data) {
+            *a -= scale * b;
+        }
     }
 
     pub fn mul(&self, other: &Matrix) -> Matrix {
@@ -101,6 +129,19 @@ impl Add for &Matrix {
     type Output = Matrix;
     fn add(self, rhs: &Matrix) -> Matrix {
         self.add(rhs)
+    }
+}
+
+impl AddAssign for Matrix {
+    fn add_assign(&mut self, rhs: Matrix) {
+        self.add_inplace(&rhs);
+    }
+}
+
+impl Sub for &Matrix {
+    type Output = Matrix;
+    fn sub(self, rhs: &Matrix) -> Matrix {
+        self.sub(rhs)
     }
 }
 

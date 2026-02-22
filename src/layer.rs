@@ -1,6 +1,6 @@
 use crate::{
     matrix::Matrix,
-    utils::{Rng, add_vecs},
+    utils::{add_vecs, outer_prod, Rng},
 };
 
 pub struct Linear {
@@ -40,11 +40,24 @@ impl Linear {
     }
 
     pub fn backward(&mut self, grad_output: &[f64], input: &[f64]) -> Vec<f64> {
-        todo!()
+        self.grad_weight += outer_prod(grad_output, input);
+        for (b, g) in self.grad_bias.iter_mut().zip(grad_output.iter()) {
+            *b += g;
+        }
+        &self.weight.transpose() * grad_output
     }
 
     pub fn update(&mut self, learning_rate: f64) {
-        todo!()
+        self.weight
+            .sub_scale_inplace(&self.grad_weight, learning_rate);
+        for (b, grad) in self.bias.iter_mut().zip(&self.grad_bias) {
+            *b -= learning_rate * grad;
+        }
+    }
+
+    pub fn zero_grad(&mut self) {
+        self.grad_weight = Matrix::zeros(self.out_features, self.in_features);
+        self.grad_bias = vec![0.0; self.out_features];
     }
 }
 
@@ -143,7 +156,7 @@ mod tests {
     #[should_panic]
     fn test_dimension_mismatch() {
         let mut layer = Linear::new(2, 3);
-        let input = vec![1.0]; // Wrong size: should be 2
+        let input = vec![1.0];
         let _ = layer.forward(&input);
     }
 }
