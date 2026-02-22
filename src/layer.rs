@@ -245,4 +245,233 @@ mod tests {
         }
         assert_eq!(layer.grad_bias, vec![0.0, 0.0]);
     }
+
+    #[test]
+    fn test_numerical_gradient_weights() {
+        let mut layer = Linear::new(2, 3);
+        layer.weight = Matrix::new(3, 2, vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6]);
+        layer.bias = vec![0.0, 0.0, 0.0];
+        layer.zero_grad();
+
+        let input = vec![1.0, 2.0];
+        let target = vec![0.5, 0.5, 0.5];
+
+        let output = layer.forward(&input);
+        let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
+        layer.backward(&grad_output, &input);
+
+        let epsilon = 1e-5;
+
+        for i in 0..3 {
+            for j in 0..2 {
+                let original = layer.weight.get(i, j);
+
+                layer.weight.set(i, j, original + epsilon);
+                let out_plus = layer.forward(&input);
+                let loss_plus: f64 = out_plus
+                    .iter()
+                    .zip(&target)
+                    .map(|(o, t)| (o - t).powi(2))
+                    .sum::<f64>()
+                    / 2.0;
+
+                layer.weight.set(i, j, original - epsilon);
+                let out_minus = layer.forward(&input);
+                let loss_minus: f64 = out_minus
+                    .iter()
+                    .zip(&target)
+                    .map(|(o, t)| (o - t).powi(2))
+                    .sum::<f64>()
+                    / 2.0;
+
+                layer.weight.set(i, j, original);
+
+                let numerical_grad = (loss_plus - loss_minus) / (2.0 * epsilon);
+                let analytic_grad = layer.grad_weight.get(i, j);
+
+                let diff = (numerical_grad - analytic_grad).abs();
+                let denom = numerical_grad.abs() + analytic_grad.abs() + 1e-8;
+                assert!(
+                    diff / denom < 1e-4,
+                    "Weight grad mismatch at ({}, {}): numerical={}, analytic={}",
+                    i,
+                    j,
+                    numerical_grad,
+                    analytic_grad
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_numerical_gradient_bias() {
+        let mut layer = Linear::new(2, 3);
+        layer.weight = Matrix::new(3, 2, vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6]);
+        layer.bias = vec![0.1, 0.2, 0.3];
+        layer.zero_grad();
+
+        let input = vec![1.0, 2.0];
+        let target = vec![0.5, 0.5, 0.5];
+
+        let output = layer.forward(&input);
+        let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
+        layer.backward(&grad_output, &input);
+
+        let epsilon = 1e-5;
+
+        for i in 0..3 {
+            let original = layer.bias[i];
+
+            layer.bias[i] = original + epsilon;
+            let out_plus = layer.forward(&input);
+            let loss_plus: f64 = out_plus
+                .iter()
+                .zip(&target)
+                .map(|(o, t)| (o - t).powi(2))
+                .sum::<f64>()
+                / 2.0;
+
+            layer.bias[i] = original - epsilon;
+            let out_minus = layer.forward(&input);
+            let loss_minus: f64 = out_minus
+                .iter()
+                .zip(&target)
+                .map(|(o, t)| (o - t).powi(2))
+                .sum::<f64>()
+                / 2.0;
+
+            layer.bias[i] = original;
+
+            let numerical_grad = (loss_plus - loss_minus) / (2.0 * epsilon);
+            let analytic_grad = layer.grad_bias[i];
+
+            let diff = (numerical_grad - analytic_grad).abs();
+            let denom = numerical_grad.abs() + analytic_grad.abs() + 1e-8;
+            assert!(
+                diff / denom < 1e-4,
+                "Bias grad mismatch at {}: numerical={}, analytic={}",
+                i,
+                numerical_grad,
+                analytic_grad
+            );
+        }
+    }
+
+    #[test]
+    fn test_numerical_gradient_input() {
+        let mut layer = Linear::new(2, 3);
+        layer.weight = Matrix::new(3, 2, vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6]);
+        layer.bias = vec![0.0, 0.0, 0.0];
+        layer.zero_grad();
+
+        let mut input = vec![1.0, 2.0];
+        let target = vec![0.5, 0.5, 0.5];
+
+        let output = layer.forward(&input);
+        let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
+        let grad_input = layer.backward(&grad_output, &input);
+
+        let epsilon = 1e-5;
+
+        for j in 0..2 {
+            let original = input[j];
+
+            input[j] = original + epsilon;
+            let out_plus = layer.forward(&input);
+            let loss_plus: f64 = out_plus
+                .iter()
+                .zip(&target)
+                .map(|(o, t)| (o - t).powi(2))
+                .sum::<f64>()
+                / 2.0;
+
+            input[j] = original - epsilon;
+            let out_minus = layer.forward(&input);
+            let loss_minus: f64 = out_minus
+                .iter()
+                .zip(&target)
+                .map(|(o, t)| (o - t).powi(2))
+                .sum::<f64>()
+                / 2.0;
+
+            input[j] = original;
+
+            let numerical_grad = (loss_plus - loss_minus) / (2.0 * epsilon);
+            let analytic_grad = grad_input[j];
+
+            let diff = (numerical_grad - analytic_grad).abs();
+            let denom = numerical_grad.abs() + analytic_grad.abs() + 1e-8;
+            assert!(
+                diff / denom < 1e-4,
+                "Input grad mismatch at {}: numerical={}, analytic={}",
+                j,
+                numerical_grad,
+                analytic_grad
+            );
+        }
+    }
+
+    #[test]
+    fn test_numerical_gradient_larger_layer() {
+        let mut layer = Linear::new(4, 5);
+        layer.weight = Matrix::new(
+            5,
+            4,
+            vec![
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6,
+                1.7, 1.8, 1.9, 2.0,
+            ],
+        );
+        layer.bias = vec![0.01, 0.02, 0.03, 0.04, 0.05];
+        layer.zero_grad();
+
+        let input = vec![1.0, 2.0, 3.0, 4.0];
+        let target = vec![1.0, 1.0, 1.0, 1.0, 1.0];
+
+        let output = layer.forward(&input);
+        let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
+        layer.backward(&grad_output, &input);
+
+        let epsilon = 1e-5;
+        let mut max_error: f64 = 0.0;
+
+        for i in 0..5 {
+            for j in 0..4 {
+                let original = layer.weight.get(i, j);
+
+                layer.weight.set(i, j, original + epsilon);
+                let out_plus = layer.forward(&input);
+                let loss_plus: f64 = out_plus
+                    .iter()
+                    .zip(&target)
+                    .map(|(o, t)| (o - t).powi(2))
+                    .sum::<f64>()
+                    / 2.0;
+
+                layer.weight.set(i, j, original - epsilon);
+                let out_minus = layer.forward(&input);
+                let loss_minus: f64 = out_minus
+                    .iter()
+                    .zip(&target)
+                    .map(|(o, t)| (o - t).powi(2))
+                    .sum::<f64>()
+                    / 2.0;
+
+                layer.weight.set(i, j, original);
+
+                let numerical_grad = (loss_plus - loss_minus) / (2.0 * epsilon);
+                let analytic_grad = layer.grad_weight.get(i, j);
+
+                let diff = (numerical_grad - analytic_grad).abs();
+                let denom = numerical_grad.abs() + analytic_grad.abs() + 1e-8;
+                max_error = max_error.max(diff / denom);
+            }
+        }
+
+        assert!(
+            max_error < 1e-4,
+            "Max relative error too high: {}",
+            max_error
+        );
+    }
 }
