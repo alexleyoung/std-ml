@@ -81,3 +81,93 @@ pub fn outer_prod(a: &[f64], b: &[f64]) -> Matrix {
     }
     Matrix::new(a.len(), b.len(), data)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rng_with_seed_deterministic() {
+        let mut rng1 = Rng::with_seed(42);
+        let mut rng2 = Rng::with_seed(42);
+
+        for _ in 0..10 {
+            assert_eq!(rng1.next(), rng2.next());
+        }
+    }
+
+    #[test]
+    fn test_rng_next_range() {
+        let mut rng = Rng::with_seed(42);
+        for _ in 0..100 {
+            let val = rng.next_range(-5.0, 5.0);
+            assert!(val >= -5.0 && val < 5.0);
+        }
+    }
+
+    #[test]
+    fn test_rng_next_int() {
+        let mut rng = Rng::with_seed(42);
+        for _ in 0..100 {
+            let val = rng.next_int(0, 10);
+            assert!(val >= 0 && val < 10);
+        }
+    }
+
+    #[test]
+    fn test_rng_fill() {
+        let mut rng = Rng::with_seed(42);
+        let mut v = vec![0.0; 10];
+        rng.fill(&mut v, -1.0, 1.0);
+
+        for val in &v {
+            assert!(*val >= -1.0 && *val < 1.0);
+        }
+    }
+
+    #[test]
+    fn test_add_vecs() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, 5.0, 6.0];
+        let c = add_vecs(&a, &b);
+
+        assert_eq!(c, vec![5.0, 7.0, 9.0]);
+    }
+
+    #[test]
+    fn test_add_vecs_empty() {
+        let a: Vec<f64> = vec![];
+        let b: Vec<f64> = vec![];
+        let c = add_vecs(&a, &b);
+
+        assert!(c.is_empty());
+    }
+
+    #[test]
+    fn test_outer_prod() {
+        let a = vec![1.0, 2.0];
+        let b = vec![3.0, 4.0, 5.0];
+        let m = outer_prod(&a, &b);
+
+        assert_eq!(m.rows(), 2);
+        assert_eq!(m.cols(), 3);
+
+        assert_eq!(m.get(0, 0), 3.0);
+        assert_eq!(m.get(0, 1), 4.0);
+        assert_eq!(m.get(0, 2), 5.0);
+        assert_eq!(m.get(1, 0), 6.0);
+        assert_eq!(m.get(1, 1), 8.0);
+        assert_eq!(m.get(1, 2), 10.0);
+    }
+
+    #[test]
+    fn test_outer_prod_identity_case() {
+        let a = vec![1.0];
+        let b = vec![1.0];
+        let m = outer_prod(&a, &b);
+
+        assert_eq!(m.rows(), 1);
+        assert_eq!(m.cols(), 1);
+        assert_eq!(m.get(0, 0), 1.0);
+    }
+}

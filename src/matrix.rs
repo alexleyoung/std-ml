@@ -314,6 +314,82 @@ mod tests {
     #[test]
     fn test_display() {
         let m = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
-        let _ = format!("{}", m); // Should not panic
+        let _ = format!("{}", m);
+    }
+
+    #[test]
+    fn test_add_inplace() {
+        let mut a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        a.add_inplace(&b);
+
+        assert_eq!(a.get(0, 0), 6.0);
+        assert_eq!(a.get(0, 1), 8.0);
+        assert_eq!(a.get(1, 0), 10.0);
+        assert_eq!(a.get(1, 1), 12.0);
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        let b = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let c = a.sub(&b);
+
+        assert_eq!(c.get(0, 0), 4.0);
+        assert_eq!(c.get(0, 1), 4.0);
+        assert_eq!(c.get(1, 0), 4.0);
+        assert_eq!(c.get(1, 1), 4.0);
+    }
+
+    #[test]
+    fn test_sub_operator() {
+        let a = Matrix::new(2, 2, vec![10.0, 20.0, 30.0, 40.0]);
+        let b = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let c = &a - &b;
+
+        assert_eq!(c.get(0, 0), 9.0);
+        assert_eq!(c.get(1, 1), 36.0);
+    }
+
+    #[test]
+    fn test_sub_scale_inplace() {
+        let mut a = Matrix::new(2, 2, vec![10.0, 10.0, 10.0, 10.0]);
+        let b = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        a.sub_scale_inplace(&b, 2.0);
+
+        assert_eq!(a.get(0, 0), 8.0);
+        assert_eq!(a.get(0, 1), 6.0);
+        assert_eq!(a.get(1, 0), 4.0);
+        assert_eq!(a.get(1, 1), 2.0);
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        a += b;
+
+        assert_eq!(a.get(0, 0), 6.0);
+        assert_eq!(a.get(1, 1), 12.0);
+    }
+
+    #[test]
+    fn test_mul_vec() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let v = vec![1.0, 2.0, 3.0];
+        let result = m.mul_vec(&v);
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], 14.0);
+        assert_eq!(result[1], 32.0);
+    }
+
+    #[test]
+    fn test_mul_vec_operator() {
+        let m = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let v = vec![1.0, 2.0];
+        let result = &m * &v[..];
+
+        assert_eq!(result, vec![5.0, 11.0]);
     }
 }

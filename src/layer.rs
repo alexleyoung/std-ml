@@ -159,4 +159,76 @@ mod tests {
         let input = vec![1.0];
         let _ = layer.forward(&input);
     }
+
+    #[test]
+    fn test_backward_gradient_accumulation() {
+        let mut layer = Linear::new(2, 2);
+        layer.weight = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        layer.bias = vec![0.0, 0.0];
+        layer.zero_grad();
+
+        let input = vec![1.0, 2.0];
+        let grad_output = vec![0.5, 1.0];
+
+        let grad_input = layer.backward(&grad_output, &input);
+
+        assert_eq!(grad_input.len(), 2);
+
+        assert_eq!(layer.grad_weight.get(0, 0), 0.5);
+        assert_eq!(layer.grad_weight.get(0, 1), 1.0);
+        assert_eq!(layer.grad_weight.get(1, 0), 1.0);
+        assert_eq!(layer.grad_weight.get(1, 1), 2.0);
+
+        assert_eq!(layer.grad_bias[0], 0.5);
+        assert_eq!(layer.grad_bias[1], 1.0);
+    }
+
+    #[test]
+    fn test_backward_multiple_calls_accumulate() {
+        let mut layer = Linear::new(2, 2);
+        layer.weight = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        layer.bias = vec![0.0, 0.0];
+        layer.zero_grad();
+
+        let input = vec![1.0, 1.0];
+        let grad_output = vec![1.0, 1.0];
+
+        layer.backward(&grad_output, &input);
+        layer.backward(&grad_output, &input);
+
+        assert_eq!(layer.grad_weight.get(0, 0), 2.0);
+        assert_eq!(layer.grad_bias[0], 2.0);
+    }
+
+    #[test]
+    fn test_update() {
+        let mut layer = Linear::new(2, 2);
+        layer.weight = Matrix::new(2, 2, vec![10.0, 20.0, 30.0, 40.0]);
+        layer.bias = vec![1.0, 2.0];
+        layer.grad_weight = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        layer.grad_bias = vec![0.5, 0.5];
+
+        layer.update(0.1);
+
+        assert_eq!(layer.weight.get(0, 0), 9.9);
+        assert_eq!(layer.weight.get(1, 1), 39.6);
+        assert_eq!(layer.bias[0], 0.95);
+        assert_eq!(layer.bias[1], 1.95);
+    }
+
+    #[test]
+    fn test_zero_grad() {
+        let mut layer = Linear::new(2, 2);
+        layer.grad_weight = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        layer.grad_bias = vec![5.0, 6.0];
+
+        layer.zero_grad();
+
+        for i in 0..2 {
+            for j in 0..2 {
+                assert_eq!(layer.grad_weight.get(i, j), 0.0);
+            }
+        }
+        assert_eq!(layer.grad_bias, vec![0.0, 0.0]);
+    }
 }
