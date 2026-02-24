@@ -6,10 +6,11 @@ use crate::{
 pub struct Linear {
     in_features: usize,
     out_features: usize,
-    weight: Matrix,      // shape: (out_features, in_features)
-    bias: Vec<f64>,      // shape: (out_features,)
-    grad_weight: Matrix, // shape: (out_features, in_features)
-    grad_bias: Vec<f64>, // shape: (out_features,)
+    weight: Matrix,          // shape: (out_features, in_features)
+    bias: Vec<f64>,          // shape: (out_features,)
+    grad_weight: Matrix,     // shape: (out_features, in_features)
+    grad_bias: Vec<f64>,     // shape: (out_features,)
+    input: Option<Vec<f64>>, // shape: (in_features,); cache input for back prop
 }
 
 impl Linear {
@@ -25,6 +26,7 @@ impl Linear {
             bias: vec![0.0; out_features],
             grad_weight: Matrix::zeros(out_features, in_features),
             grad_bias: vec![0.0; out_features],
+            input: None,
         }
     }
 
@@ -32,6 +34,7 @@ impl Linear {
     pub fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         assert!(self.in_features == input.len());
 
+        self.input = Some(input.to_vec());
         let wx = &self.weight * input;
         add_vecs(&wx, &self.bias)
     }
@@ -44,12 +47,15 @@ impl Linear {
     ///
     /// Parameters:
     /// [grad_output]: gradient vector w.r.t. this layer's output (size out_features)
-    /// [input]: vec of inputs used to compute this layer's forward pass (size in_features)
     ///
     /// Return:
     /// Weight transpose * [grad_output] for previous layers to use in gradient calculations
-    pub fn backward(&mut self, grad_output: &[f64], input: &[f64]) -> Vec<f64> {
-        self.grad_weight += outer_prod(grad_output, input);
+    pub fn backward(&mut self, grad_output: &[f64]) -> Vec<f64> {
+        let input = self
+            .input
+            .take()
+            .expect("Forward must be called before backward");
+        self.grad_weight += outer_prod(grad_output, &input);
         for (b, g) in self.grad_bias.iter_mut().zip(grad_output.iter()) {
             *b += g;
         }
@@ -184,7 +190,8 @@ mod tests {
         let input = vec![1.0, 2.0];
         let grad_output = vec![0.5, 1.0];
 
-        let grad_input = layer.backward(&grad_output, &input);
+        layer.forward(&input);
+        let grad_input = layer.backward(&grad_output);
 
         assert_eq!(grad_input.len(), 2);
 
@@ -207,8 +214,10 @@ mod tests {
         let input = vec![1.0, 1.0];
         let grad_output = vec![1.0, 1.0];
 
-        layer.backward(&grad_output, &input);
-        layer.backward(&grad_output, &input);
+        layer.forward(&input);
+        layer.backward(&grad_output);
+        layer.forward(&input);
+        layer.backward(&grad_output);
 
         assert_eq!(layer.grad_weight.get(0, 0), 2.0);
         assert_eq!(layer.grad_bias[0], 2.0);
@@ -258,7 +267,7 @@ mod tests {
 
         let output = layer.forward(&input);
         let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
-        layer.backward(&grad_output, &input);
+        layer.backward(&grad_output);
 
         let epsilon = 1e-5;
 
@@ -315,7 +324,7 @@ mod tests {
 
         let output = layer.forward(&input);
         let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
-        layer.backward(&grad_output, &input);
+        layer.backward(&grad_output);
 
         let epsilon = 1e-5;
 
@@ -369,7 +378,7 @@ mod tests {
 
         let output = layer.forward(&input);
         let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
-        let grad_input = layer.backward(&grad_output, &input);
+        let grad_input = layer.backward(&grad_output);
 
         let epsilon = 1e-5;
 
@@ -430,7 +439,7 @@ mod tests {
 
         let output = layer.forward(&input);
         let grad_output: Vec<f64> = output.iter().zip(&target).map(|(o, t)| o - t).collect();
-        layer.backward(&grad_output, &input);
+        layer.backward(&grad_output);
 
         let epsilon = 1e-5;
         let mut max_error: f64 = 0.0;
