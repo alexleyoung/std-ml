@@ -3,6 +3,26 @@ use crate::{
     utils::{Rng, add_vecs, outer_prod},
 };
 
+pub trait Layer {
+    /// Transform the input, via weights/biases or activation, and pass forward
+    ///
+    /// Parameters:
+    /// [input]: vector of output from previous layer
+    fn forward(&mut self, input: &[f64]) -> Vec<f64>;
+
+    /// Calculate dL/dx (error w.r.t the input this layer got) to give to previous layer
+    ///
+    /// Parameters:
+    /// [grad_output]: gradient vector w.r.t. this activation's output
+    fn backward(&mut self, grad_output: &[f64]) -> Vec<f64>;
+
+    /// Parameters:
+    /// [learning_rate]: this layer's learning rate
+    fn update(&mut self, learning_rate: f64);
+
+    fn zero_grad(&mut self);
+}
+
 pub struct Linear {
     in_features: usize,
     out_features: usize,
@@ -30,17 +50,19 @@ impl Linear {
         }
     }
 
+    pub fn forward_batch(&mut self, inputs: &[Vec<f64>]) -> Vec<Vec<f64>> {
+        inputs.iter().map(|x| self.forward(x)).collect()
+    }
+}
+
+impl Layer for Linear {
     /// Calculate y = Wx + b to pass forward to following layer
-    pub fn forward(&mut self, input: &[f64]) -> Vec<f64> {
+    fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         assert!(self.in_features == input.len());
 
         self.input = Some(input.to_vec());
         let wx = &self.weight * input;
         add_vecs(&wx, &self.bias)
-    }
-
-    pub fn forward_batch(&mut self, inputs: &[Vec<f64>]) -> Vec<Vec<f64>> {
-        inputs.iter().map(|x| self.forward(x)).collect()
     }
 
     /// Back propagation
@@ -50,7 +72,7 @@ impl Linear {
     ///
     /// Return:
     /// Weight transpose * [grad_output] for previous layers to use in gradient calculations
-    pub fn backward(&mut self, grad_output: &[f64]) -> Vec<f64> {
+    fn backward(&mut self, grad_output: &[f64]) -> Vec<f64> {
         let input = self
             .input
             .take()
@@ -66,7 +88,7 @@ impl Linear {
     ///
     /// Parameters:
     /// [learning_rate]: the learning rate of this layer
-    pub fn update(&mut self, learning_rate: f64) {
+    fn update(&mut self, learning_rate: f64) {
         self.weight
             .sub_scale_inplace(&self.grad_weight, learning_rate);
         for (b, grad) in self.bias.iter_mut().zip(&self.grad_bias) {
@@ -75,7 +97,7 @@ impl Linear {
     }
 
     /// Reset gradients for use in between forward batches
-    pub fn zero_grad(&mut self) {
+    fn zero_grad(&mut self) {
         self.grad_weight = Matrix::zeros(self.out_features, self.in_features);
         self.grad_bias = vec![0.0; self.out_features];
     }

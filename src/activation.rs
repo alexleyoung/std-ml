@@ -1,14 +1,4 @@
-pub trait Activation {
-    /// Parameters:
-    /// [input]: vector of output from previous layer
-    fn forward(&mut self, input: &[f64]) -> Vec<f64>;
-
-    /// Parameters:
-    /// [grad_output]: gradient vector w.r.t. this activation's output
-    fn backward(&mut self, grad_output: &[f64]) -> Vec<f64>;
-
-    fn zero_grad(&mut self) {}
-}
+use crate::Layer;
 
 pub struct ReLU {
     // d/dx = 1 iff x > 0
@@ -21,7 +11,7 @@ impl ReLU {
     }
 }
 
-impl Activation for ReLU {
+impl Layer for ReLU {
     fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         let output: Vec<f64> = input.iter().map(|&x| x.max(0.0)).collect();
         self.output = Some(output.clone());
@@ -40,6 +30,10 @@ impl Activation for ReLU {
             .map(|(&g, &o)| g * if o > 0.0 { 1.0 } else { 0.0 })
             .collect()
     }
+
+    fn update(&mut self, _: f64) {}
+
+    fn zero_grad(&mut self) {}
 }
 
 pub struct SoftMax {
@@ -53,7 +47,7 @@ impl SoftMax {
     }
 }
 
-impl Activation for SoftMax {
+impl Layer for SoftMax {
     fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         // subtract all input from max for numerical stability
         let max_val = input.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
@@ -69,6 +63,10 @@ impl Activation for SoftMax {
     fn backward(&mut self, _grad_output: &[f64]) -> Vec<f64> {
         unimplemented!("Use CrossEntropy loss instead");
     }
+
+    fn update(&mut self, _: f64) {}
+
+    fn zero_grad(&mut self) {}
 }
 
 pub struct Sigmoid {
@@ -82,7 +80,7 @@ impl Sigmoid {
     }
 }
 
-impl Activation for Sigmoid {
+impl Layer for Sigmoid {
     fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         let output: Vec<f64> = input.iter().map(|x| 1.0 / (1.0 + (-x).exp())).collect();
         self.output = Some(output.clone());
@@ -101,6 +99,10 @@ impl Activation for Sigmoid {
             .map(|(&g, &o)| g * o * (1.0 - o))
             .collect()
     }
+
+    fn update(&mut self, _: f64) {}
+
+    fn zero_grad(&mut self) {}
 }
 
 #[cfg(test)]

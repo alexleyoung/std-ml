@@ -15,6 +15,8 @@
 pub mod activation;
 pub mod layer;
 pub mod matrix;
+pub mod network;
 pub mod utils;
 
+pub use layer::Layer;
 pub use matrix::Matrix;
