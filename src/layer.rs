@@ -36,18 +36,26 @@ pub struct Linear {
 impl Linear {
     /// Simple layer construction with weight and bias initialization
     pub fn new(in_features: usize, out_features: usize) -> Self {
-        let mut data = vec![0.0; in_features * out_features];
-        Rng::new().fill(&mut data, -0.1, 0.1);
+        let mut weights = vec![0.0; in_features * out_features];
+        Rng::new().fill(&mut weights, -0.1, 0.1);
 
         Self {
             in_features,
             out_features,
-            weight: Matrix::new(out_features, in_features, data),
+            weight: Matrix::new(out_features, in_features, weights),
             bias: vec![0.0; out_features],
             grad_weight: Matrix::zeros(out_features, in_features),
             grad_bias: vec![0.0; out_features],
             input: None,
         }
+    }
+
+    pub fn set_weight(&mut self, weight: Matrix) {
+        self.weight = weight;
+    }
+
+    pub fn set_bias(&mut self, bias: Vec<f64>) {
+        self.bias = bias;
     }
 
     pub fn forward_batch(&mut self, inputs: &[Vec<f64>]) -> Vec<Vec<f64>> {
