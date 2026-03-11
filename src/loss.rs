@@ -6,6 +6,7 @@ pub trait Loss {
 pub struct MSE {}
 
 impl Loss for MSE {
+    // Calculate the mean squared error
     fn loss(&self, p: &[f64], y: &[f64]) -> f64 {
         let n = p.len() as f64;
         assert!(
@@ -38,7 +39,15 @@ impl Loss for MSE {
 pub struct CrossEntropy {}
 
 impl Loss for CrossEntropy {
+    // - sum (y_i * log(p_i))
+    // negation to make loss positive, so we can minimize
+    // log prediction to punish confidently wrong predictions
     fn loss(&self, p: &[f64], y: &[f64]) -> f64 {
+        assert!(
+            p.len() == y.len(),
+            "Prediction size should match truth size"
+        );
+
         -(p.iter()
             .zip(y.iter())
             .map(|(&p, &y)| y * p.ln())
