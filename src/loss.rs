@@ -20,6 +20,7 @@ impl Loss for MSE {
         loss / n
     }
 
+    // calculate dL/dp
     fn gradient(&self, p: &[f64], y: &[f64]) -> Vec<f64> {
         let n = p.len() as f64;
         assert!(
@@ -38,7 +39,10 @@ pub struct CrossEntropy {}
 
 impl Loss for CrossEntropy {
     fn loss(&self, p: &[f64], y: &[f64]) -> f64 {
-        todo!()
+        -(p.iter()
+            .zip(y.iter())
+            .map(|(&p, &y)| y * p.ln())
+            .sum::<f64>())
     }
 
     fn gradient(&self, p: &[f64], y: &[f64]) -> Vec<f64> {
