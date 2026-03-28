@@ -39,22 +39,39 @@ impl Loss for MSE {
 pub struct CrossEntropy {}
 
 impl Loss for CrossEntropy {
-    // - sum (y_i * log(p_i))
-    // negation to make loss positive, so we can minimize
-    // log prediction to punish confidently wrong predictions
     fn loss(&self, p: &[f64], y: &[f64]) -> f64 {
         assert!(
             p.len() == y.len(),
             "Prediction size should match truth size"
         );
 
+        let max_val = p.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let exp_sum: f64 = p.iter().map(|&x| (x - max_val).exp()).sum();
+
         -(p.iter()
             .zip(y.iter())
-            .map(|(&p, &y)| y * p.ln())
+            .map(|(&x, &y)| {
+                let px = (x - max_val).exp() / exp_sum;
+                y * px.ln()
+            })
             .sum::<f64>())
     }
 
     fn gradient(&self, p: &[f64], y: &[f64]) -> Vec<f64> {
-        todo!()
+        assert!(
+            p.len() == y.len(),
+            "Prediction size should match truth size"
+        );
+
+        let max_val = p.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let exp_sum: f64 = p.iter().map(|&x| (x - max_val).exp()).sum();
+
+        p.iter()
+            .zip(y.iter())
+            .map(|(&x, &y)| {
+                let px = (x - max_val).exp() / exp_sum;
+                px - y
+            })
+            .collect()
     }
 }
