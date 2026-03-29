@@ -14,9 +14,9 @@ impl IDXDataLoader {
         let (targets, target_dim_sizes) = parse_idx(target_data);
         IDXDataLoader {
             data: data,
-            data_size: data_dim_sizes.iter().fold(1, |a, x| a * x),
+            data_size: data_dim_sizes.iter().skip(1).fold(1, |a, x| a * x),
             targets,
-            target_size: target_dim_sizes.iter().fold(1, |a, x| a * x),
+            target_size: target_dim_sizes.iter().skip(1).fold(1, |a, x| a * x),
             batch_size,
         }
     }
@@ -58,12 +58,12 @@ impl<'a> Iterator for DataLoaderIter<'a> {
         let target_end =
             (self.current_target + self.target_size * self.batch_size).min(self.targets.len());
 
+        let data_batch = &self.data[self.current_data..data_end];
+        let target_batch = &self.targets[self.current_target..target_end];
+
         self.current_data = data_end;
         self.current_target = target_end;
-        Some((
-            &self.data[self.current_data..data_end],
-            &self.targets[self.current_target..target_end],
-        ))
+        Some((data_batch, target_batch))
     }
 }
 

@@ -66,7 +66,7 @@ impl Linear {
 impl Layer for Linear {
     /// Calculate y = Wx + b to pass forward to following layer
     fn forward(&mut self, input: &[f64]) -> Vec<f64> {
-        assert!(self.in_features == input.len());
+        assert_eq!(self.in_features, input.len());
 
         self.input = Some(input.to_vec());
         let wx = &self.weight * input;
