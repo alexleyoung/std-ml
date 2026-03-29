@@ -8,9 +8,9 @@ use std_ml::{
 
 fn main() {
     let mut model = Network::new();
-    model.add_layer(Box::new(Linear::new(784, 256)));
+    model.add_layer(Box::new(Linear::new(784, 128)));
     model.add_layer(Box::new(ReLU::new()));
-    model.add_layer(Box::new(Linear::new(256, 10)));
+    model.add_layer(Box::new(Linear::new(128, 10)));
     let loss_fn = CrossEntropy {};
 
     let dataloader = IDXDataLoader::new(
@@ -59,25 +59,19 @@ fn main() {
         let mut correct = 0;
         let mut total = 0;
         for (data, targets) in test_dataloader.iter() {
-            let num_samples = data.len() / 784;
-            for i in 0..num_samples {
-                let sample: Vec<f64> = data[i * 784..(i + 1) * 784]
-                    .iter()
-                    .map(|&x| x / 255.0)
-                    .collect();
-                let label = targets[i] as usize;
-                let out = model.forward(&sample);
-                let predicted = out
-                    .iter()
-                    .enumerate()
-                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                    .unwrap()
-                    .0;
-                if predicted == label {
-                    correct += 1;
-                }
-                total += 1;
+            let sample: Vec<f64> = data.iter().map(|&x| x / 255.0).collect();
+            let label = targets[0] as usize;
+            let out = model.forward(&sample);
+            let predicted = out
+                .iter()
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                .unwrap()
+                .0;
+            if predicted == label {
+                correct += 1;
             }
+            total += 1;
         }
 
         let avg_loss = epoch_loss / sample_count as f64;
