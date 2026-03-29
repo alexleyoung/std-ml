@@ -21,8 +21,8 @@ impl Network {
         out
     }
 
-    pub fn backward(&mut self, grd_output: &[f64]) {
-        let mut dx = grd_output.to_vec();
+    pub fn backward(&mut self, grad_output: &[f64]) {
+        let mut dx = grad_output.to_vec();
         for layer in self.layers.iter_mut().rev() {
             dx = layer.backward(&dx);
         }
