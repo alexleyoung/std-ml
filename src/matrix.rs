@@ -190,4 +190,182 @@ impl fmt::Display for Matrix {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn new() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        assert_eq!(m.rows(), 2);
+        assert_eq!(m.cols(), 3);
+        assert_eq!(m.get(0, 0), 1.0);
+        assert_eq!(m.get(0, 1), 2.0);
+        assert_eq!(m.get(0, 2), 3.0);
+        assert_eq!(m.get(1, 0), 4.0);
+        assert_eq!(m.get(1, 1), 5.0);
+        assert_eq!(m.get(1, 2), 6.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_incorrect_dims() {
+        // Should panic: 2x3 matrix needs 6 elements, not 5
+        let _ = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn row_major_order() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        // Should panic: incorrect dimension indexing
+        m.get(3, 2);
+    }
+
+    #[test]
+    fn transpose() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let mt = m.transpose();
+        assert_eq!(mt.rows(), 3);
+        assert_eq!(mt.cols(), 2);
+        assert_eq!(mt.get(0, 0), 1.0);
+        assert_eq!(mt.get(1, 0), 2.0);
+        assert_eq!(mt.get(2, 0), 3.0);
+        assert_eq!(mt.get(0, 1), 4.0);
+        assert_eq!(mt.get(1, 1), 5.0);
+        assert_eq!(mt.get(2, 1), 6.0);
+    }
+
+    #[test]
+    fn transpose_twice() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let mtt = m.transpose().transpose();
+        assert_eq!(m.rows(), mtt.rows());
+        assert_eq!(m.cols(), mtt.cols());
+        for i in 0..2 {
+            for j in 0..3 {
+                assert_eq!(m.get(i, j), mtt.get(i, j));
+            }
+        }
+    }
+
+    #[test]
+    fn add() {
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        let c = a.add(&b);
+        assert_eq!(c.get(0, 0), 6.0);
+        assert_eq!(c.get(0, 1), 8.0);
+        assert_eq!(c.get(1, 0), 10.0);
+        assert_eq!(c.get(1, 1), 12.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn add_incorrect_dims() {
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let _ = a.add(&b);
+    }
+
+    #[test]
+    fn sub() {
+        let a = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+        let b = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let c = a.sub(&b);
+        assert_eq!(c.get(0, 0), 4.0);
+        assert_eq!(c.get(0, 1), 4.0);
+        assert_eq!(c.get(1, 0), 4.0);
+        assert_eq!(c.get(1, 1), 4.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn sub_incorrect_dims() {
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let _ = a.sub(&b);
+    }
+
+    #[test]
+    fn sub_scale() {
+        let mut a = Matrix::new(2, 2, vec![10.0, 20.0, 30.0, 40.0]);
+        let b = Matrix::new(2, 2, vec![2.0, 4.0, 6.0, 8.0]);
+        a.sub_scale_inplace(&b, 3.0);
+        // 10 - 3*2 = 4, 20 - 3*4 = 8, 30 - 3*6 = 12, 40 - 3*8 = 16
+        assert_eq!(a.get(0, 0), 4.0);
+        assert_eq!(a.get(0, 1), 8.0);
+        assert_eq!(a.get(1, 0), 12.0);
+        assert_eq!(a.get(1, 1), 16.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn sub_scale_incorrect_dims() {
+        let mut a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        a.sub_scale_inplace(&b, 1.0);
+    }
+
+    #[test]
+    fn mat_scale() {
+        let m = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let scaled = &m * 2.5;
+        assert_eq!(scaled.get(0, 0), 2.5);
+        assert_eq!(scaled.get(0, 1), 5.0);
+        assert_eq!(scaled.get(1, 0), 7.5);
+        assert_eq!(scaled.get(1, 1), 10.0);
+    }
+
+    #[test]
+    fn mat_mul_vec() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let v = vec![1.0, 2.0, 3.0];
+        let result = m.mul_vec(&v);
+        assert_eq!(result.len(), 2);
+        // [1*1 + 2*2 + 3*3, 4*1 + 5*2 + 6*3] = [14, 32]
+        assert_eq!(result[0], 14.0);
+        assert_eq!(result[1], 32.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn mat_mul_vec_incorrect_dims() {
+        let m = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let v = vec![1.0, 2.0]; // Wrong length: needs 3, has 2
+        let _ = m.mul_vec(&v);
+    }
+
+    #[test]
+    fn mat_mul_mat() {
+        let a = Matrix::new(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let b = Matrix::new(3, 2, vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0]);
+        let c = a.mul(&b);
+        assert_eq!(c.rows(), 2);
+        assert_eq!(c.cols(), 2);
+        // [1*7+2*9+3*11, 1*8+2*10+3*12] = [58, 64]
+        // [4*7+5*9+6*11, 4*8+5*10+6*12] = [139, 154]
+        assert_eq!(c.get(0, 0), 58.0);
+        assert_eq!(c.get(0, 1), 64.0);
+        assert_eq!(c.get(1, 0), 139.0);
+        assert_eq!(c.get(1, 1), 154.0);
+    }
+
+    #[test]
+    fn identity_mul() {
+        let m = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let i = Matrix::new(2, 2, vec![1.0, 0.0, 0.0, 1.0]);
+        let result = m.mul(&i);
+        for row in 0..2 {
+            for col in 0..2 {
+                assert_eq!(result.get(row, col), m.get(row, col));
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn mat_mul_mat_incorrect_dims() {
+        // Can't multiply 2x2 by 3x2
+        let a = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+        let b = Matrix::new(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let _ = a.mul(&b);
+    }
 }
