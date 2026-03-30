@@ -103,8 +103,6 @@ impl Matrix {
             for j in 0..other.cols {
                 let mut sum = 0.0;
                 for k in 0..self.cols {
-                    // directly index to avoid unnecessary assertions from
-                    // get() and set(). compiler will guaranteed skip bounds check
                     sum += self.data[i * self.cols + k] * other.data[k * other.cols + j];
                 }
                 res.set(i, j, sum);
