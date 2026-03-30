@@ -148,3 +148,8 @@ enum IDXDataType {
     Float,
     Double,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}

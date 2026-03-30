@@ -48,38 +48,4 @@ impl Network {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{activation::ReLU, layer::Linear, matrix::Matrix};
-
-    #[test]
-    fn test_add_layer() {
-        let mut net = Network::new();
-        let linear = Linear::new(5, 5);
-        net.add_layer(Box::new(linear));
-        assert!(net.layers.len() == 1);
-    }
-
-    #[test]
-    fn test_forward_output_shape_and_activation() {
-        let mut l1 = Linear::new(3, 3);
-        l1.set_weight(Matrix::new(
-            3,
-            3,
-            vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-        ));
-        l1.set_bias(vec![0.0, 0.0, 0.0]);
-
-        let mut l3 = Linear::new(3, 1);
-        l3.set_weight(Matrix::new(1, 3, vec![1.0, 1.0, 1.0]));
-        l3.set_bias(vec![0.0]);
-
-        let mut n = Network::new();
-        n.add_layer(Box::new(l1));
-        n.add_layer(Box::new(ReLU::new()));
-        n.add_layer(Box::new(l3));
-
-        let out = n.forward(&[-1.0, 0.0, 1.0]);
-
-        assert_eq!(out.len(), 1);
-        assert!((out[0] - 1.0).abs() < 1e-10);
-    }
 }

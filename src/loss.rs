@@ -75,3 +75,8 @@ impl Loss for CrossEntropy {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}
