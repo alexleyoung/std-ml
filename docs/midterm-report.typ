@@ -105,10 +105,35 @@ transformations (like normalizing pixel brightness and creating one-hot vectors)
 and iteration.
 
 = Preliminary Results
-Preliminary testing on the MNIST test set shows a classification accuracy of *92%* with one hidden layer of 128 neurons.
-92% is unfortunately nothing to boast about for a simple MLP, but there is plenty of room to grow. The current
-implementation is also noticeably slower than optimized libraries, largely due to naive triple-loop matrix
-multiplication with no SIMD or cache optimizations. These are planned future works.
+I evaluated the current implementation on the standard MNIST test set (10,000 images) after training for 10 epochs with
+a learning rate of 0.1. The network achieved *92%* accuracy with a single hidden layer of 128 neurons and ReLU
+activation. Below is a comparison against well-known baselines on the same dataset:
+
+#figure(
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: horizon,
+    [*Model*], [*Accuracy*], [*Notes*],
+    [Linear Classifier (1-layer)], [88.0%], [No preprocessing],
+    [Our MLP (128)], [92%], [Current implementation],
+    [K-NN (Euclidean)], [95.0%], [No preprocessing],
+    [2-layer NN (300 HU)], [95.3%], [MSE loss, no preprocessing],
+    [3-layer NN (500+300 HU)], [98.47%], [Softmax, cross-entropy, weight decay],
+    [SVM (Gaussian Kernel)], [98.6%], [No preprocessing],
+    [LeNet-5], [99.05%], [No distortions],
+    [Committee of 35 CNNs], [99.77%], [Elastic distortions],
+  ),
+  caption: [MNIST classification accuracy across model architectures. Baseline numbers from @lecun-mnist-benchmarks.],
+)
+
+Our current 92% pails compared to most other model benchmarks. This is reasonable since I'm using random, weight
+initialization, no regularization, and a single hidden layer, as this was a quick end-to-end test. After spending some
+time on optimization, I will revisit these benchmarks and do further analysis.
+
+Training performance wise, std-ml is noticeably slower than optimized frameworks. A single epoch currently takes
+several seconds due to naive triple-loop matrix multiplication without SIMD or cache-blocking optimizations. This
+is a primary target for future work.
 
 = Future Plan
 Over the next few weeks, the focus will shift from "correctness" to "performance" and completeness:
