@@ -56,7 +56,7 @@ multiplication. Rust also offers convenient operator traits which I've implement
 with the custom matrices. Matrix multiplication is currently implemented naively.
 
 == layer.rs
-To populate networks, we need layers. We define a general `Layer` trait as well as a linear implementation of said trait
+To populate networks, we need layers. I define a general `Layer` trait as well as a linear implementation of said trait
 in this module to enable basic linear models.
 
 ==== Layer
@@ -116,7 +116,7 @@ activation. Below is a comparison against well-known baselines on the same datas
     align: horizon,
     [*Model*], [*Accuracy*], [*Notes*],
     [Linear Classifier (1-layer)], [88.0%], [No preprocessing],
-    [Our MLP (128)], [92%], [Current implementation],
+    [My MLP (128)], [92%], [Current implementation],
     [K-NN (Euclidean)], [95.0%], [No preprocessing],
     [2-layer NN (300 HU)], [95.3%], [MSE loss, no preprocessing],
     [3-layer NN (500+300 HU)], [98.47%], [Softmax, cross-entropy, weight decay],
@@ -127,7 +127,7 @@ activation. Below is a comparison against well-known baselines on the same datas
   caption: [MNIST classification accuracy across model architectures. Baseline numbers from @lecun-mnist-benchmarks.],
 )
 
-Our current 92% pails compared to most other model benchmarks. This is reasonable since I'm using random, weight
+The current 92% pails compared to most other model benchmarks. This is reasonable since I'm using random, weight
 initialization, no regularization, and a single hidden layer, as this was a quick end-to-end test. After spending some
 time on optimization, I will revisit these benchmarks and do further analysis.
 
