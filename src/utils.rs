@@ -71,4 +71,57 @@ pub fn outer_prod(a: &[f64], b: &[f64]) -> Matrix {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
+
+    const EPSILON: f64 = 10e-6;
+    const MIN: f64 = 0.0;
+    const MAX: f64 = 10.0;
+
+    fn approx_equal(a: f64, b: f64) -> bool {
+        (a - b).abs() < EPSILON
+    }
+
+    #[test]
+    fn unseeded_rng_changes_rand() {
+        let mut rng1 = Rng::new();
+        std::thread::sleep(Duration::from_secs(1));
+        let mut rng2 = Rng::new();
+
+        assert!(!approx_equal(rng1.next(), rng2.next()));
+    }
+
+    #[test]
+    fn seeded_rng_is_deterministic() {
+        let mut rng1 = Rng::with_seed(0);
+        let mut rng2 = Rng::with_seed(0);
+        let mut rng3 = Rng::with_seed(1);
+        let mut rng4 = Rng::with_seed(1);
+
+        assert!(approx_equal(rng1.next(), rng2.next()));
+        assert!(approx_equal(rng3.next(), rng4.next()));
+        assert!(!approx_equal(rng1.next(), rng3.next()));
+    }
+
+    #[test]
+    fn next_range_is_bounded() {
+        let mut rng = Rng::with_seed(0);
+
+        for _ in 0..1_000_000 {
+            let val = rng.next_range(MIN, MAX);
+            assert!(val >= MIN);
+            assert!(val < MAX);
+        }
+    }
+
+    #[test]
+    fn vec_fill_is_random() {
+        let mut rng1 = Rng::with_seed(0);
+        let mut rng2 = Rng::with_seed(1);
+        let mut vec1 = vec![0.0; 1_000_000];
+        let mut vec2 = vec![0.0; 1_000_000];
+
+        rng1.fill(&mut vec1, MIN, MAX);
+        rng2.fill(&mut vec2, MIN, MAX);
+        assert!(vec1.iter().zip(&vec2).any(|(&a, &b)| !approx_equal(a, b)));
+    }
 }
