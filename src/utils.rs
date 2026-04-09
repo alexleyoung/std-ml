@@ -104,24 +104,121 @@ mod tests {
 
     #[test]
     fn next_range_is_bounded() {
-        let mut rng = Rng::with_seed(0);
+        let mut rng = Rng::with_seed(2);
 
         for _ in 0..1_000_000 {
             let val = rng.next_range(MIN, MAX);
-            assert!(val >= MIN);
-            assert!(val < MAX);
+            assert!(val >= MIN && val < MAX);
         }
     }
 
     #[test]
+    fn next_int_is_bounded() {
+        let mut rng = Rng::with_seed(3);
+        for _ in 0..1_000_000 {
+            let val = rng.next_int(3, 7);
+            assert!(val >= 3 && val < 7);
+        }
+    }
+
+    #[test]
+    fn next_int_covers_range() {
+        let mut rng = Rng::with_seed(4);
+        let mut seen = [false; 4]; // values 3, 4, 5, 6
+        for _ in 0..100_000 {
+            let val = rng.next_int(3, 7);
+            seen[(val - 3) as usize] = true;
+        }
+        assert!(
+            seen.iter().all(|&s| s),
+            "not all values in [3, 7) were generated"
+        );
+    }
+
+    #[test]
     fn vec_fill_is_random() {
-        let mut rng1 = Rng::with_seed(0);
-        let mut rng2 = Rng::with_seed(1);
+        let mut rng1 = Rng::with_seed(5);
+        let mut rng2 = Rng::with_seed(6);
         let mut vec1 = vec![0.0; 1_000_000];
         let mut vec2 = vec![0.0; 1_000_000];
 
         rng1.fill(&mut vec1, MIN, MAX);
         rng2.fill(&mut vec2, MIN, MAX);
         assert!(vec1.iter().zip(&vec2).any(|(&a, &b)| !approx_equal(a, b)));
+    }
+
+    #[test]
+    fn fill_respects_bounds() {
+        let mut rng = Rng::with_seed(7);
+        let mut vec = vec![0.0; 100_000];
+        rng.fill(&mut vec, -5.0, 5.0);
+        for &v in &vec {
+            assert!(v >= -5.0 && v < 5.0);
+        }
+    }
+
+    #[test]
+    fn add_vecs_correctness() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, -1.0, 0.5];
+        let result = add_vecs(&a, &b);
+        assert!(approx_equal(result[0], 5.0));
+        assert!(approx_equal(result[1], 1.0));
+        assert!(approx_equal(result[2], 3.5));
+    }
+
+    #[test]
+    fn add_vecs_commutativity() {
+        let a = vec![1.0, -2.0, 3.5];
+        let b = vec![0.5, 4.0, -1.0];
+        let ab = add_vecs(&a, &b);
+        let ba = add_vecs(&b, &a);
+        ab.iter()
+            .zip(&ba)
+            .for_each(|(&x, &y)| assert!(approx_equal(x, y)));
+    }
+
+    #[test]
+    fn add_vecs_with_zeros() {
+        let a = vec![1.0, 2.0, 3.0];
+        let zeros = vec![0.0; 3];
+        let result = add_vecs(&a, &zeros);
+        a.iter()
+            .zip(&result)
+            .for_each(|(&x, &y)| assert!(approx_equal(x, y)));
+    }
+
+    #[test]
+    fn outer_prod_shape() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, 5.0];
+        let m = outer_prod(&a, &b);
+        assert_eq!(m.rows(), 3);
+        assert_eq!(m.cols(), 2);
+    }
+
+    #[test]
+    fn outer_prod_values() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, 5.0];
+        let m = outer_prod(&a, &b);
+        // m[i][j] == a[i] * b[j]
+        for (i, &ai) in a.iter().enumerate() {
+            for (j, &bj) in b.iter().enumerate() {
+                assert!(approx_equal(m.get(i, j), ai * bj));
+            }
+        }
+    }
+
+    #[test]
+    fn outer_prod_with_zero_vector() {
+        let a = vec![1.0, 2.0, 3.0];
+        let zeros = vec![0.0, 0.0];
+        let m = outer_prod(&a, &zeros);
+        for i in 0..a.len() {
+            for j in 0..zeros.len() {
+                assert!(approx_equal(m.get(i, j), 0.0));
+            }
+        }
     }
 }
