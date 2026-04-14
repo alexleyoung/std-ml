@@ -36,32 +36,42 @@ impl Layer for ReLU {
     fn zero_grad(&mut self) {}
 }
 
-pub struct SoftMax {
-    // d/dx = class.exp() / classes.exp().sum()
+pub struct LeakyReLU {
+    // d/dx = 1 iff x > 0
+    alpha: f64,
     output: Option<Vec<f64>>,
 }
 
-impl SoftMax {
-    pub fn new() -> Self {
-        Self { output: None }
+impl LeakyReLU {
+    pub fn new(alpha: f64) -> Self {
+        Self {
+            alpha,
+            output: None,
+        }
     }
 }
 
-impl Layer for SoftMax {
+impl Layer for LeakyReLU {
     fn forward(&mut self, input: &[f64]) -> Vec<f64> {
-        // subtract all input from max for numerical stability
-        let max_val = input.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
-        let exp_sum: f64 = input.iter().map(|&x| (x - max_val).exp()).sum();
         let output: Vec<f64> = input
             .iter()
-            .map(|&x| (x - max_val).exp() / exp_sum)
+            .map(|&x| if x > 0.0 { x.max(0.0) } else { self.alpha * x })
             .collect();
         self.output = Some(output.clone());
         output
     }
 
-    fn backward(&mut self, _grad_output: &[f64]) -> Vec<f64> {
-        unimplemented!("Use CrossEntropy loss instead");
+    fn backward(&mut self, grad_output: &[f64]) -> Vec<f64> {
+        let output = self
+            .output
+            .take()
+            .expect("Forward must be called before backward");
+
+        grad_output
+            .iter()
+            .zip(&output)
+            .map(|(&g, &o)| g * if o > 0.0 { 1.0 } else { self.alpha })
+            .collect()
     }
 
     fn update(&mut self, _: f64) {}
