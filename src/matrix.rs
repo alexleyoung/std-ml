@@ -98,12 +98,13 @@ impl Matrix {
 
     pub fn mul(&self, other: &Matrix) -> Matrix {
         assert_eq!(self.cols, other.rows);
+        let other_t = other.transpose();
         let mut res = Self::zeros(self.rows, other.cols);
         for i in 0..self.rows {
-            for j in 0..other.cols {
+            for j in 0..other_t.rows {
                 let mut sum = 0.0;
                 for k in 0..self.cols {
-                    sum += self.data[i * self.cols + k] * other.data[k * other.cols + j];
+                    sum += self.data[i * self.cols + k] * other_t.data[j * other_t.cols + k];
                 }
                 res.set(i, j, sum);
             }
