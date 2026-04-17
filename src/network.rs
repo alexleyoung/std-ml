@@ -1,4 +1,5 @@
 use crate::Layer;
+use crate::Matrix;
 
 pub struct Network {
     layers: Vec<Box<dyn Layer>>,
@@ -19,6 +20,21 @@ impl Network {
             out = layer.forward(&out);
         }
         out
+    }
+
+    pub fn forward_batch(&mut self, input: Matrix) -> Matrix {
+        let mut out = input;
+        for layer in &mut self.layers {
+            out = layer.forward_batch(out);
+        }
+        out
+    }
+
+    pub fn backward_batch(&mut self, grad_output: Matrix) {
+        let mut dx = grad_output;
+        for layer in self.layers.iter_mut().rev() {
+            dx = layer.backward_batch(dx);
+        }
     }
 
     pub fn backward(&mut self, grad_output: &[f64]) {

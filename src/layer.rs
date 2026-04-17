@@ -1,6 +1,6 @@
 use crate::{
     matrix::Matrix,
-    utils::{Rng, add_vecs, outer_prod},
+    utils::{Rng, add_vecs, add_vecs_inplace, outer_prod},
 };
 
 pub trait Layer {
@@ -10,11 +10,21 @@ pub trait Layer {
     /// [input]: vector of output from previous layer
     fn forward(&mut self, input: &[f64]) -> Vec<f64>;
 
+    /// Transform a batch of inputs
+    ///
+    /// Parameters:
+    /// [input]: batch_size * vector matrix of output from previous layer
+    fn forward_batch(&mut self, input: Matrix) -> Matrix;
+
     /// Calculate dL/dx (error w.r.t the input this layer got) to give to previous layer
     ///
     /// Parameters:
     /// [grad_output]: gradient vector w.r.t. this activation's output
     fn backward(&mut self, grad_output: &[f64]) -> Vec<f64>;
+
+    /// Parameters:
+    /// [input]: batch_size * grad_output matrix of output from previous layer
+    fn backward_batch(&mut self, grad_output: Matrix) -> Matrix;
 
     /// Parameters:
     /// [learning_rate]: this layer's learning rate
@@ -26,11 +36,12 @@ pub trait Layer {
 pub struct Linear {
     in_features: usize,
     out_features: usize,
-    weight: Matrix,          // shape: (out_features, in_features)
-    bias: Vec<f64>,          // shape: (out_features,)
-    grad_weight: Matrix,     // shape: (out_features, in_features)
-    grad_bias: Vec<f64>,     // shape: (out_features,)
-    input: Option<Vec<f64>>, // shape: (in_features,); cache input for back prop
+    weight: Matrix,              // shape: (out_features, in_features)
+    bias: Vec<f64>,              // shape: (out_features,)
+    grad_weight: Matrix,         // shape: (out_features, in_features)
+    grad_bias: Vec<f64>,         // shape: (out_features,)
+    input: Option<Vec<f64>>,     // shape: (in_features,); cache input for back prop
+    batch_input: Option<Matrix>, // shape: (batch_size, in_features); cache input for back prop
 }
 
 impl Linear {
@@ -47,6 +58,7 @@ impl Linear {
             grad_weight: Matrix::zeros(out_features, in_features),
             grad_bias: vec![0.0; out_features],
             input: None,
+            batch_input: None,
         }
     }
 
@@ -68,9 +80,25 @@ impl Layer for Linear {
     fn forward(&mut self, input: &[f64]) -> Vec<f64> {
         assert_eq!(self.in_features, input.len());
 
-        self.input = Some(input.to_vec());
         let wx = &self.weight * input;
+
+        self.input = Some(input.to_vec());
         add_vecs(&wx, &self.bias)
+    }
+
+    fn forward_batch(&mut self, input: Matrix) -> Matrix {
+        assert_eq!(self.in_features, input.cols());
+
+        // input:          (batch, in)
+        // weight.T:       (in, out)
+        // out:            (batch, out)
+        let mut out = &input * &self.weight.transpose();
+        for i in 0..out.rows() {
+            add_vecs_inplace(out.get_row_mut(i), &self.bias);
+        }
+
+        self.batch_input = Some(input);
+        out
     }
 
     /// Back propagation
@@ -90,6 +118,25 @@ impl Layer for Linear {
             *b += g;
         }
         &self.weight.transpose() * grad_output
+    }
+
+    fn backward_batch(&mut self, grad_output: Matrix) -> Matrix {
+        let input = self
+            .batch_input
+            .take()
+            .expect("Forward must be called before backward");
+
+        // accumulate gradients from samples
+        for i in 0..input.rows() {
+            self.grad_weight += outer_prod(grad_output.get_row(i), input.get_row(i));
+            for (b, g) in self.grad_bias.iter_mut().zip(grad_output.get_row(i)) {
+                *b += g;
+            }
+        }
+        // grad_output:    (batch, out)
+        // weight:         (out, in)
+        // returned:       (batch, in)
+        &grad_output * &self.weight
     }
 
     /// Update weights and biases

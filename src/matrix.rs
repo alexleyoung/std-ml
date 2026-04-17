@@ -58,6 +58,10 @@ impl Matrix {
         self.data.iter()
     }
 
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut f64> {
+        self.data.iter_mut()
+    }
+
     pub fn transpose(&self) -> Matrix {
         let mut res = Self::zeros(self.cols, self.rows);
         for i in 0..self.rows {

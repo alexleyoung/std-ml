@@ -1,4 +1,7 @@
+use std::time::SystemTime;
+
 use std_ml::{
+    Matrix,
     activation::ReLU,
     layer::Linear,
     loader::IDXDataLoader,
@@ -8,9 +11,9 @@ use std_ml::{
 
 fn main() {
     let mut model = Network::new();
-    model.add_layer(Box::new(Linear::new(784, 128)));
+    model.add_layer(Box::new(Linear::new(784, 256)));
     model.add_layer(Box::new(ReLU::new()));
-    model.add_layer(Box::new(Linear::new(128, 10)));
+    model.add_layer(Box::new(Linear::new(256, 10)));
     let loss_fn = CrossEntropy {};
 
     let dataloader = IDXDataLoader::new(
@@ -35,23 +38,24 @@ fn main() {
             model.zero_grad();
             let num_samples = data.len() / 784;
 
-            for i in 0..num_samples {
-                let sample: Vec<f64> = data[i * 784..(i + 1) * 784]
-                    .iter()
-                    .map(|&x| x / 255.0)
-                    .collect();
-                let label = targets[i] as usize;
-                let mut one_hot = vec![0.0; 10];
-                one_hot[label] = 1.0;
+            let input_data: Vec<f64> = data.iter().map(|&x| x / 255.0).collect();
+            let input = Matrix::new(num_samples, 784, input_data);
 
-                let out = model.forward(&sample);
-                epoch_loss += loss_fn.loss(&out, &one_hot);
+            let labels: Vec<f64> = targets.iter().map(|&t| t as f64).collect();
 
-                let grad = loss_fn.gradient(&out, &one_hot);
-                model.backward(&grad);
+            let start = SystemTime::now();
+            let out = model.forward_batch(input);
 
-                sample_count += 1;
-            }
+            epoch_loss += loss_fn.loss_batch(&out, &labels) * num_samples as f64;
+            sample_count += num_samples;
+
+            let grad = loss_fn.gradient_batch(&out, &labels);
+            model.backward_batch(grad);
+
+            println!(
+                "batch time: {}",
+                SystemTime::elapsed(&start).unwrap().as_nanos(),
+            );
 
             model.update(learning_rate / num_samples as f64);
         }
