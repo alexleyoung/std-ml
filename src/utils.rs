@@ -57,6 +57,11 @@ pub fn add_vecs(a: &[f64], b: &[f64]) -> Vec<f64> {
     a.iter().zip(b.iter()).map(|(x, y)| x + y).collect()
 }
 
+/// Add vec b to a
+pub fn add_vecs_inplace(a: &mut [f64], b: &[f64]) {
+    a.iter_mut().zip(b).for_each(|(x, y)| *x += y);
+}
+
 /// Take the outer product of two vecs and return the result
 pub fn outer_prod(a: &[f64], b: &[f64]) -> Matrix {
     let mut data = Vec::with_capacity(a.len() * b.len());

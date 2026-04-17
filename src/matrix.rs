@@ -38,10 +38,24 @@ impl Matrix {
         self.data[row * self.cols + col]
     }
 
+    pub fn get_row(&self, row: usize) -> &[f64] {
+        let flat_row = row * self.cols;
+        &self.data[flat_row..flat_row + self.cols]
+    }
+
+    pub fn get_row_mut(&mut self, row: usize) -> &mut [f64] {
+        let flat_row = row * self.cols;
+        &mut self.data[flat_row..flat_row + self.cols]
+    }
+
     pub fn set(&mut self, row: usize, col: usize, value: f64) {
         assert!(row < self.rows);
         assert!(col < self.cols);
         self.data[row * self.cols + col] = value;
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &f64> {
+        self.data.iter()
     }
 
     pub fn transpose(&self) -> Matrix {
