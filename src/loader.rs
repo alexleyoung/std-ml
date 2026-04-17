@@ -1,5 +1,7 @@
 use std::fs;
 
+use crate::utils::Rng;
+
 pub struct IDXDataLoader {
     data: Vec<f64>,
     data_size: usize,
@@ -24,14 +26,16 @@ impl IDXDataLoader {
 
 impl IDXDataLoader {
     pub fn iter(&self) -> DataLoaderIter<'_> {
+        let mut indices: Vec<usize> = (0..self.targets.len() / self.target_size).collect();
+        Rng::new().shuffle(&mut indices);
         DataLoaderIter {
             data: &self.data,
             data_size: self.data_size,
             targets: &self.targets,
             target_size: self.target_size,
             batch_size: self.batch_size,
-            current_data: 0,
-            current_target: 0,
+            indices: indices,
+            index: 0,
         }
     }
 }
@@ -42,27 +46,29 @@ pub struct DataLoaderIter<'a> {
     targets: &'a [f64],
     target_size: usize,
     batch_size: usize,
-    current_data: usize,
-    current_target: usize,
+    indices: Vec<usize>,
+    index: usize,
 }
 
 impl<'a> Iterator for DataLoaderIter<'a> {
-    type Item = (&'a [f64], &'a [f64]);
+    type Item = (Vec<f64>, Vec<f64>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_data >= self.data.len() || self.current_target >= self.targets.len() {
+        if self.index >= self.indices.len() {
             return None;
         }
 
-        let data_end = (self.current_data + self.data_size * self.batch_size).min(self.data.len());
-        let target_end =
-            (self.current_target + self.target_size * self.batch_size).min(self.targets.len());
+        let end = (self.index + self.batch_size).min(self.indices.len());
+        let mut data_batch = Vec::with_capacity((end - self.index) * self.data_size);
+        let mut target_batch = Vec::with_capacity((end - self.index) * self.target_size);
 
-        let data_batch = &self.data[self.current_data..data_end];
-        let target_batch = &self.targets[self.current_target..target_end];
+        for &i in &self.indices[self.index..end] {
+            data_batch.extend_from_slice(&self.data[i * self.data_size..(i + 1) * self.data_size]);
+            target_batch
+                .extend_from_slice(&self.targets[i * self.target_size..(i + 1) * self.target_size]);
+        }
 
-        self.current_data = data_end;
-        self.current_target = target_end;
+        self.index = end;
         Some((data_batch, target_batch))
     }
 }

@@ -44,10 +44,23 @@ impl Rng {
         (self.next() * range as f64) as i64 + min
     }
 
+    /// Generate usize in [min, max)
+    pub fn next_usize(&mut self, min: usize, max: usize) -> usize {
+        let range = max - min;
+        (self.next() * range as f64) as usize + min
+    }
+
     /// Fill vector with random values in [min, max)
     pub fn fill(&mut self, vec: &mut [f64], min: f64, max: f64) {
         for v in vec.iter_mut() {
             *v = self.next_range(min, max)
+        }
+    }
+
+    pub fn shuffle<T>(&mut self, v: &mut [T]) {
+        for i in (1..v.len()).rev() {
+            let j = self.next_usize(0, i + 1);
+            v.swap(i, j);
         }
     }
 }

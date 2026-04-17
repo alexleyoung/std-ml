@@ -11,9 +11,9 @@ use std_ml::{
 
 fn main() {
     let mut model = Network::new();
-    model.add_layer(Box::new(Linear::new(784, 256)));
+    model.add_layer(Box::new(Linear::new(784, 128)));
     model.add_layer(Box::new(ReLU::new()));
-    model.add_layer(Box::new(Linear::new(256, 10)));
+    model.add_layer(Box::new(Linear::new(128, 10)));
     let loss_fn = CrossEntropy {};
 
     let dataloader = IDXDataLoader::new(
@@ -30,7 +30,15 @@ fn main() {
     let learning_rate = 0.01;
     let epochs = 5;
 
+    println!(
+        "{:>5} | {:>10} | {:>10} | {:>8} | {:>8}",
+        "epoch", "loss", "accuracy", "time", "total"
+    );
+    println!("{}", "-".repeat(55));
+
+    let total_start = SystemTime::now();
     for epoch in 0..epochs {
+        let epoch_start = SystemTime::now();
         let mut epoch_loss = 0.0;
         let mut sample_count = 0;
 
@@ -43,7 +51,6 @@ fn main() {
 
             let labels: Vec<f64> = targets.iter().map(|&t| t as f64).collect();
 
-            let start = SystemTime::now();
             let out = model.forward_batch(input);
 
             epoch_loss += loss_fn.loss_batch(&out, &labels) * num_samples as f64;
@@ -51,11 +58,6 @@ fn main() {
 
             let grad = loss_fn.gradient_batch(&out, &labels);
             model.backward_batch(grad);
-
-            println!(
-                "batch time: {}",
-                SystemTime::elapsed(&start).unwrap().as_nanos(),
-            );
 
             model.update(learning_rate / num_samples as f64);
         }
@@ -80,7 +82,15 @@ fn main() {
 
         let avg_loss = epoch_loss / sample_count as f64;
         let test_accuracy = correct as f64 / total as f64;
-        println!("epoch {epoch}: avg_loss = {avg_loss:.4}");
-        println!("epoch {epoch}: test_accuracy = {test_accuracy:.4}");
+        let elapsed = SystemTime::elapsed(&epoch_start).unwrap().as_secs_f32();
+        let total_elapsed = SystemTime::elapsed(&total_start).unwrap().as_secs_f32();
+        println!(
+            "{:>5} | {:>10.4} | {:>9.2}% | {:>7.2}s | {:>7.2}s",
+            epoch,
+            avg_loss,
+            test_accuracy * 100.0,
+            elapsed,
+            total_elapsed,
+        );
     }
 }
