@@ -50,10 +50,25 @@ impl Rng {
         (self.next() * range as f64) as usize + min
     }
 
+    // box-muller transform for uniform -> normal dist
+    pub fn next_norm(&mut self, mean: f64, sd: f64) -> f64 {
+        let u1 = self.next();
+        let u2 = self.next();
+        let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
+        mean + sd * z
+    }
+
     /// Fill vector with random values in [min, max)
     pub fn fill(&mut self, vec: &mut [f64], min: f64, max: f64) {
         for v in vec.iter_mut() {
             *v = self.next_range(min, max)
+        }
+    }
+
+    /// Fill but sample from normal distribution
+    pub fn fill_norm(&mut self, vec: &mut [f64], mean: f64, sd: f64) {
+        for v in vec.iter_mut() {
+            *v = self.next_norm(mean, sd);
         }
     }
 

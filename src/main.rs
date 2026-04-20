@@ -3,7 +3,7 @@ use std::time::SystemTime;
 use std_ml::{
     Matrix,
     activation::ReLU,
-    layer::Linear,
+    layer::{Initialization, Linear},
     loader::IDXDataLoader,
     loss::{CrossEntropy, Loss},
     network::Network,
@@ -13,6 +13,7 @@ enum Dataset {
     MNIST,
     FashionMNIST,
 }
+
 struct Args {
     dataset: Dataset,
     learning_rate: f64,
@@ -76,9 +77,9 @@ fn main() {
     let args = Args::parse();
 
     let mut model = Network::new();
-    model.add_layer(Box::new(Linear::new(784, 128)));
+    model.add_layer(Box::new(Linear::new(784, 128, Initialization::He)));
     model.add_layer(Box::new(ReLU::new()));
-    model.add_layer(Box::new(Linear::new(128, 10)));
+    model.add_layer(Box::new(Linear::new(128, 10, Initialization::He)));
     let loss_fn = CrossEntropy {};
 
     let (dataloader, test_dataloader) = match args.dataset {

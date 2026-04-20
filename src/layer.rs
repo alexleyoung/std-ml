@@ -33,6 +33,13 @@ pub trait Layer {
     fn zero_grad(&mut self);
 }
 
+pub enum Initialization {
+    Random,
+    LeCun,
+    He,
+    Glorot,
+}
+
 pub struct Linear {
     in_features: usize,
     out_features: usize,
@@ -46,9 +53,25 @@ pub struct Linear {
 
 impl Linear {
     /// Simple layer construction with weight and bias initialization
-    pub fn new(in_features: usize, out_features: usize) -> Self {
+    pub fn new(in_features: usize, out_features: usize, w_init: Initialization) -> Self {
         let mut weights = vec![0.0; in_features * out_features];
-        Rng::new().fill(&mut weights, -0.1, 0.1);
+
+        let mut rng = Rng::new();
+        match w_init {
+            Initialization::Random => rng.fill(&mut weights, -0.1, 0.1),
+            Initialization::LeCun => {
+                let bound = (3.0 / in_features as f64).sqrt();
+                rng.fill(&mut weights, -bound, bound);
+            }
+            Initialization::Glorot => {
+                let bound = (6.0 / (in_features + out_features) as f64).sqrt();
+                rng.fill(&mut weights, -bound, bound);
+            }
+            Initialization::He => {
+                let std_dev = (2.0 / in_features as f64).sqrt();
+                rng.fill_norm(&mut weights, 0.0, std_dev);
+            }
+        }
 
         Self {
             in_features,
