@@ -163,7 +163,6 @@ impl Layer for Sigmoid {
             input.cols(),
             input.iter().map(|x| 1.0 / (1.0 + (-x).exp())).collect(),
         );
-        // let output: Vec<f64> = input.iter().map(|x| 1.0 / (1.0 + (-x).exp())).collect();
         self.batch_output = Some(output.clone());
         output
     }
@@ -191,6 +190,69 @@ impl Layer for Sigmoid {
             .iter_mut()
             .zip(output.iter())
             .for_each(|(g, &o)| *g = *g * o * (1.0 - o));
+        grad_output
+    }
+
+    fn update(&mut self, _: f64, _: f64) {}
+
+    fn zero_grad(&mut self) {}
+}
+
+pub struct Tanh {
+    output: Option<Vec<f64>>,
+    batch_output: Option<Matrix>,
+}
+
+impl Tanh {
+    pub fn new() -> Self {
+        Self {
+            output: None,
+            batch_output: None,
+        }
+    }
+}
+
+impl Layer for Tanh {
+    fn forward(&mut self, input: &[f64]) -> Vec<f64> {
+        let output: Vec<f64> = input.iter().map(|x| x.tanh()).collect();
+        self.output = Some(output.clone());
+        output
+    }
+
+    fn forward_batch(&mut self, input: Matrix) -> Matrix {
+        let output = Matrix::new(
+            input.rows(),
+            input.cols(),
+            input.iter().map(|x| x.tanh()).collect(),
+        );
+        self.batch_output = Some(output.clone());
+        output
+    }
+
+    fn backward(&mut self, grad_output: &[f64]) -> Vec<f64> {
+        let output = self
+            .output
+            .take()
+            .expect("Forward must be called before backward");
+
+        grad_output
+            .iter()
+            .zip(&output)
+            // sech^2 = 1 - tanh^2
+            .map(|(&g, &o)| g * (1.0 - o * o))
+            .collect()
+    }
+
+    fn backward_batch(&mut self, mut grad_output: Matrix) -> Matrix {
+        let output = self
+            .batch_output
+            .take()
+            .expect("Forward must be called before backward");
+
+        grad_output
+            .iter_mut()
+            .zip(output.iter())
+            .for_each(|(g, &o)| *g = *g * (1.0 - o * o));
         grad_output
     }
 
