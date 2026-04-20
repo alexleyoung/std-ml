@@ -1,5 +1,5 @@
 dataset := "mnist"
-lr := "0.01"
+lr := "0.2"
 epochs := "5"
 lambda := "0.0001"
 batch_size := "32"

@@ -22,9 +22,7 @@ impl IDXDataLoader {
             batch_size,
         }
     }
-}
 
-impl IDXDataLoader {
     pub fn iter(&self) -> DataLoaderIter<'_> {
         let mut indices: Vec<usize> = (0..self.targets.len() / self.target_size).collect();
         Rng::new().shuffle(&mut indices);
