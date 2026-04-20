@@ -59,7 +59,7 @@ impl Layer for ReLU {
         grad_output
     }
 
-    fn update(&mut self, _: f64) {}
+    fn update(&mut self, _: f64, _: f64) {}
 
     fn zero_grad(&mut self) {}
 }
@@ -130,7 +130,7 @@ impl Layer for LeakyReLU {
         grad_output
     }
 
-    fn update(&mut self, _: f64) {}
+    fn update(&mut self, _: f64, _: f64) {}
 
     fn zero_grad(&mut self) {}
 }
@@ -194,7 +194,7 @@ impl Layer for Sigmoid {
         grad_output
     }
 
-    fn update(&mut self, _: f64) {}
+    fn update(&mut self, _: f64, _: f64) {}
 
     fn zero_grad(&mut self) {}
 }

@@ -9,26 +9,104 @@ use std_ml::{
     network::Network,
 };
 
+enum Dataset {
+    MNIST,
+    FashionMNIST,
+}
+struct Args {
+    dataset: Dataset,
+    learning_rate: f64,
+    epochs: usize,
+    lambda: f64,
+    batch_size: usize,
+}
+
+impl Args {
+    fn parse() -> Self {
+        let mut dataset = Dataset::MNIST;
+        let mut learning_rate = 0.01;
+        let mut epochs = 5;
+        let mut lambda = 0.0001;
+        let mut batch_size = 32;
+
+        let args: Vec<String> = std::env::args().skip(1).collect();
+        let mut i = 0;
+        while i < args.len() {
+            match args[i].as_str() {
+                "--dataset" => {
+                    i += 1;
+                    dataset = match args[i].as_str() {
+                        "mnist" => Dataset::MNIST,
+                        "fashion" => Dataset::FashionMNIST,
+                        other => panic!("Unknown dataset '{other}', use 'mnist' or 'fashion'"),
+                    };
+                }
+                "--lr" => {
+                    i += 1;
+                    learning_rate = args[i].parse().expect("--lr must be a float");
+                }
+                "--epochs" => {
+                    i += 1;
+                    epochs = args[i].parse().expect("--epochs must be an int");
+                }
+                "--lambda" => {
+                    i += 1;
+                    lambda = args[i].parse().expect("--lambda must be a float");
+                }
+                "--batch-size" => {
+                    i += 1;
+                    batch_size = args[i].parse().expect("--batch-size must be an int");
+                }
+                other => panic!("Unknown argument '{}'", other),
+            }
+            i += 1;
+        }
+
+        Args {
+            dataset,
+            learning_rate,
+            epochs,
+            lambda,
+            batch_size,
+        }
+    }
+}
+
 fn main() {
+    let args = Args::parse();
+
     let mut model = Network::new();
     model.add_layer(Box::new(Linear::new(784, 128)));
     model.add_layer(Box::new(ReLU::new()));
     model.add_layer(Box::new(Linear::new(128, 10)));
     let loss_fn = CrossEntropy {};
 
-    let dataloader = IDXDataLoader::new(
-        "data/MNIST/raw/train-images-idx3-ubyte",
-        "data/MNIST/raw/train-labels-idx1-ubyte",
-        64,
-    );
-    let test_dataloader = IDXDataLoader::new(
-        "data/MNIST/raw/t10k-images-idx3-ubyte",
-        "data/MNIST/raw/t10k-labels-idx1-ubyte",
-        1,
-    );
-
-    let learning_rate = 0.01;
-    let epochs = 5;
+    let (dataloader, test_dataloader) = match args.dataset {
+        Dataset::MNIST => (
+            IDXDataLoader::new(
+                "data/MNIST/raw/train-images-idx3-ubyte",
+                "data/MNIST/raw/train-labels-idx1-ubyte",
+                args.batch_size,
+            ),
+            IDXDataLoader::new(
+                "data/MNIST/raw/t10k-images-idx3-ubyte",
+                "data/MNIST/raw/t10k-labels-idx1-ubyte",
+                1,
+            ),
+        ),
+        Dataset::FashionMNIST => (
+            IDXDataLoader::new(
+                "data/FashionMNIST/raw/train-images-idx3-ubyte",
+                "data/FashionMNIST/raw/train-labels-idx1-ubyte",
+                args.batch_size,
+            ),
+            IDXDataLoader::new(
+                "data/FashionMNIST/raw/t10k-images-idx3-ubyte",
+                "data/FashionMNIST/raw/t10k-labels-idx1-ubyte",
+                1,
+            ),
+        ),
+    };
 
     println!(
         "{:>5} | {:>10} | {:>10} | {:>8} | {:>8}",
@@ -37,7 +115,7 @@ fn main() {
     println!("{}", "-".repeat(55));
 
     let total_start = SystemTime::now();
-    for epoch in 0..epochs {
+    for epoch in 0..args.epochs {
         let epoch_start = SystemTime::now();
         let mut epoch_loss = 0.0;
         let mut sample_count = 0;
@@ -59,7 +137,7 @@ fn main() {
             let grad = loss_fn.gradient_batch(&out, &labels);
             model.backward_batch(grad);
 
-            model.update(learning_rate / num_samples as f64);
+            model.update(args.learning_rate / num_samples as f64, args.lambda);
         }
 
         let mut correct = 0;

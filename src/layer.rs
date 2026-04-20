@@ -28,7 +28,7 @@ pub trait Layer {
 
     /// Parameters:
     /// [learning_rate]: this layer's learning rate
-    fn update(&mut self, learning_rate: f64);
+    fn update(&mut self, learning_rate: f64, lambda: f64);
 
     fn zero_grad(&mut self);
 }
@@ -68,10 +68,6 @@ impl Linear {
 
     pub fn set_bias(&mut self, bias: Vec<f64>) {
         self.bias = bias;
-    }
-
-    pub fn forward_batch(&mut self, inputs: &[Vec<f64>]) -> Vec<Vec<f64>> {
-        inputs.iter().map(|x| self.forward(x)).collect()
     }
 }
 
@@ -143,12 +139,16 @@ impl Layer for Linear {
     ///
     /// Parameters:
     /// [learning_rate]: the learning rate of this layer
-    fn update(&mut self, learning_rate: f64) {
+    /// [lambda]: regularization parameter
+    fn update(&mut self, learning_rate: f64, lambda: f64) {
+        // subtract gradients
         self.weight
             .sub_scale_inplace(&self.grad_weight, learning_rate);
         for (b, grad) in self.bias.iter_mut().zip(&self.grad_bias) {
             *b -= learning_rate * grad;
         }
+        // regularization
+        self.weight.iter_mut().for_each(|w| *w -= 2.0 * lambda * *w);
     }
 
     /// Reset gradients for use in between forward batches

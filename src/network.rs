@@ -44,9 +44,9 @@ impl Network {
         }
     }
 
-    pub fn update(&mut self, learning_rate: f64) {
+    pub fn update(&mut self, learning_rate: f64, lambda: f64) {
         for layer in &mut self.layers {
-            layer.update(learning_rate);
+            layer.update(learning_rate, lambda);
         }
     }
 
