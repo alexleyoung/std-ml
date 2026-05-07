@@ -1,9 +1,6 @@
 # std-ml
 
-**A Standard-Library-Only Neural Network Framework in Rust**
-
-A ground-up implementation of a Multilayer Perceptron (MLP) using only Rust's standard library for ISU CS 4740
-(Introduction to Machine Learning).
+A simple neural network library implemented from-scratch using only Rust's standard library.
 
 ---
 
