@@ -38,8 +38,8 @@ Provides the `Loss` trait with both scalar and batch variants of `loss` and `gra
 `CrossEntropy` (numerically stable, with softmax fused into the gradient) and `MSE`.
 
 ### `loader.rs`
-A zero-copy IDX binary format parser supporting both MNIST and Fashion MNIST. Handles arbitrary IDX data types
-(u8, i8, i16, i32, f32, f64). Supports batching and shuffled iteration. Pixel normalization is left to the caller.
+An IDX binary format parser supporting both MNIST datasets. It reads IDX values into a `Vec<f64>`, handles
+all IDX data types (u8, i8, i16, i32, f32, f64), and supports batching and shuffled iteration.
 
 ### `utils.rs`
 Assorted utilities including LCG pseudo-random number generator with uniform (`fill`) and normal (`fill_norm`, via 
